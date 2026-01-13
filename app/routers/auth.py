@@ -5,6 +5,7 @@ from starlette import status
 
 from app.core.database import get_db
 from app.core.security import hash_password
+from app.models.country import Country
 from app.models.user import AppUser, UserAuth
 from app.schemas.auth import LoginRequest, RegisterRequest, RegisterResponse, TokenResponse
 from app.utils.jwt import create_access_token
@@ -38,12 +39,12 @@ def register_user(
     payload: RegisterRequest,
     db: Session = Depends(get_db)
 ):
-    # 1️⃣ Check phone or email uniqueness
+    # ✅ 1) Check if phone or email already exists
     existing_user = db.execute(
         select(AppUser).where(
             or_(
                 AppUser.phone == payload.phone,
-                AppUser.email == payload.email
+                AppUser.email == str(payload.email)
             )
         )
     ).scalar_one_or_none()
@@ -54,18 +55,32 @@ def register_user(
             detail="User with this phone or email already exists"
         )
 
-    # 2️⃣ Create app_user
+    # ✅ 2) Check if country_code exists (Required now)
+    country_exists = db.execute(
+        select(Country.country_code).where(
+            Country.country_code == payload.country_code
+        )
+    ).scalar_one_or_none()
+
+    if not country_exists:
+        raise HTTPException(
+            status_code=400,
+            detail="Invalid country_code"
+        )
+
+    # ✅ 3) Create app_user (all required)
     new_user = AppUser(
         full_name=payload.full_name,
         phone=payload.phone,
-        email=payload.email,
-        gender=payload.gender
+        email=str(payload.email),
+        gender=payload.gender.value if hasattr(payload.gender, "value") else payload.gender,
+        country_code=payload.country_code
     )
 
     db.add(new_user)
-    db.flush()  # generates user_id
+    db.flush()  # ✅ generates user_id
 
-    # 3️⃣ Create user_auth
+    # ✅ 4) Create user_auth
     auth = UserAuth(
         user_id=new_user.user_id,
         password_hash=hash_password(payload.password)
@@ -73,10 +88,10 @@ def register_user(
 
     db.add(auth)
 
-    # 4️⃣ Commit transaction
+    # ✅ 5) Commit
     db.commit()
 
-    return {
-        "user_id": new_user.user_id,
-        "message": "User registered successfully"
-    }
+    return RegisterResponse(
+        user_id=new_user.user_id,
+        message="User registered successfully"
+    )

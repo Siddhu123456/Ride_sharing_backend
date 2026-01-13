@@ -1,5 +1,7 @@
 from pydantic import BaseModel, EmailStr
-from typing import Optional
+from enum import Enum
+
+
 
 class LoginRequest(BaseModel):
     phone: str
@@ -9,11 +11,18 @@ class TokenResponse(BaseModel):
     access_token: str
     token_type: str = "bearer"
 
+
+class GenderEnum(str, Enum):
+    MALE = "MALE"
+    FEMALE = "FEMALE"
+    OTHER = "OTHER"
+
 class RegisterRequest(BaseModel):
     full_name: str
     phone: str
-    email: Optional[EmailStr] = None
-    gender: Optional[str] = None
+    email: EmailStr
+    gender: GenderEnum
+    country_code: str
     password: str
 
 
