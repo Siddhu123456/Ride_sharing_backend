@@ -9,3 +9,6 @@ passlib[bcrypt]
 python-multipart
 argon2-cffi
 psycopg2-binary
+pydantic-settings
+psycopg2
+pydantic[email]

@@ -1,21 +1,25 @@
 from pydantic import BaseModel, EmailStr
-from enum import Enum
+from app.schemas.enums import GenderEnum
+from typing import List
+
+from app.schemas.enums import UserRoleEnum
 
 
 
 class LoginRequest(BaseModel):
-    phone: str
+    email: EmailStr
     password: str
+
+
+class LoginResponse(BaseModel):
+    user_id: int
+    roles: List[UserRoleEnum]
+
 
 class TokenResponse(BaseModel):
     access_token: str
     token_type: str = "bearer"
 
-
-class GenderEnum(str, Enum):
-    MALE = "MALE"
-    FEMALE = "FEMALE"
-    OTHER = "OTHER"
 
 class RegisterRequest(BaseModel):
     full_name: str
@@ -29,3 +33,8 @@ class RegisterRequest(BaseModel):
 class RegisterResponse(BaseModel):
     user_id: int
     message: str
+
+
+class SelectRoleRequest(BaseModel):
+    user_id: int
+    role: UserRoleEnum
