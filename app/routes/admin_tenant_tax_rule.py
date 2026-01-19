@@ -6,7 +6,7 @@ from starlette import status
 from app.core.database import get_db
 from app.core.admin_auth import verify_admin
 from app.models.tenant import Tenant
-from app.models.country import Country
+from app.models.core import Country
 from app.models.tenant_tax_rule import TenantTaxRule
 from app.schemas.tenant_tax import TenantTaxRuleCreateRequest, TenantTaxRuleResponse
 

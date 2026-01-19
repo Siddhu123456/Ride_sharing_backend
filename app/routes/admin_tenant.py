@@ -8,7 +8,8 @@ from sqlalchemy.orm import Session
 
 from app.core.admin_auth import verify_admin
 from app.core.database import get_db
-from app.models.tenant import City, Tenant, TenantCity, TenantCountry
+from app.models.tenant import  Tenant, TenantCity, TenantCountry
+from app.models.core import City
 from app.schemas.admin_tenant import BulkCitiesCreateRequest, BulkCitiesCreateResponse, CityResponse, TenantCountryCreateRequest, TenantCountryResponse, TenantCreateRequest, TenantResponse
 
 

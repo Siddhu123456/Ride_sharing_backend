@@ -7,7 +7,7 @@ from starlette import status
 from app.core.database import get_db
 from app.core.deps import get_current_user_session
 from app.core.security import hash_password, verify_password
-from app.models.country import Country
+from app.models.core import Country
 from app.models.user import AppUser, UserAuth
 from app.models.user_session import UserSession
 from app.schemas.auth import LoginRequest, LoginResponse, RegisterRequest, RegisterResponse, SelectRoleRequest, TokenResponse

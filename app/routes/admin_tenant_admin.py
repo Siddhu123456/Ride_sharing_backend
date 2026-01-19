@@ -53,7 +53,7 @@ def assign_tenant_admin(
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
 
-    # ✅ Check already assigned
+    # ✅ Check already assigned (even if inactive)
     existing_admin = db.execute(
         select(TenantAdmin).where(
             and_(
@@ -63,10 +63,10 @@ def assign_tenant_admin(
         )
     ).scalar_one_or_none()
 
-    # ✅ If exists but inactive -> reactivate
+    # ✅ Reactivate if inactive
     if existing_admin:
-        if existing_admin.status != "ACTIVE":
-            existing_admin.status = "ACTIVE"
+        if existing_admin.is_active is False:
+            existing_admin.is_active = True
             existing_admin.is_primary = payload.is_primary
             db.commit()
             db.refresh(existing_admin)
@@ -74,14 +74,14 @@ def assign_tenant_admin(
 
         raise HTTPException(status_code=400, detail="User is already a tenant admin")
 
-    # ✅ If assigning primary admin: unset existing primary
+    # ✅ If assigning primary admin: unset existing primary (only active ones)
     if payload.is_primary:
         primary_admin = db.execute(
             select(TenantAdmin).where(
                 and_(
                     TenantAdmin.tenant_id == tenant_id,
                     TenantAdmin.is_primary == True,
-                    TenantAdmin.status == "ACTIVE"
+                    TenantAdmin.is_active == True
                 )
             )
         ).scalar_one_or_none()
@@ -94,7 +94,7 @@ def assign_tenant_admin(
         tenant_id=tenant_id,
         user_id=payload.user_id,
         is_primary=payload.is_primary,
-        status="ACTIVE"
+        is_active=True
     )
     db.add(tenant_admin)
 
@@ -145,7 +145,12 @@ def list_tenant_admins(
         raise HTTPException(status_code=404, detail="Tenant not found")
 
     admins = db.execute(
-        select(TenantAdmin).where(TenantAdmin.tenant_id == tenant_id)
+        select(TenantAdmin).where(
+            and_(
+                TenantAdmin.tenant_id == tenant_id,
+                TenantAdmin.is_active == True
+            )
+        )
     ).scalars().all()
 
     return TenantAdminListResponse(tenant_id=tenant_id, admins=admins)
@@ -169,7 +174,8 @@ def remove_tenant_admin(
         select(TenantAdmin).where(
             and_(
                 TenantAdmin.tenant_id == tenant_id,
-                TenantAdmin.user_id == user_id
+                TenantAdmin.user_id == user_id,
+                TenantAdmin.is_active == True
             )
         )
     ).scalar_one_or_none()
@@ -178,9 +184,9 @@ def remove_tenant_admin(
         raise HTTPException(status_code=404, detail="Tenant admin not found")
 
     # ✅ Soft delete
-    admin_row.status = "INACTIVE"
+    admin_row.is_active = False
     admin_row.is_primary = False
 
     db.commit()
 
-    return {"message": "Tenant admin removed (set to INACTIVE)"}
+    return {"message": "Tenant admin removed (is_active set to false)"}

@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy import select
 
 from app.core.database import get_db
-from app.models.country import Country
+from app.models.core import Country
 from app.schemas.country import CountryResponse
 
 router = APIRouter(prefix="/countries", tags=["Country"])

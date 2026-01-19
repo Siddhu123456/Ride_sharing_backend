@@ -13,7 +13,7 @@ class TenantAdminResponse(BaseModel):
     tenant_id: int
     user_id: int
     is_primary: bool
-    status: str
+    is_active: bool
     created_on: datetime
 
     class Config:

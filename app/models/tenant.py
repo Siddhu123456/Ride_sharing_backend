@@ -33,19 +33,7 @@ class TenantCountry(Base):
 
 
 
-class City(Base):
-    __tablename__ = "city"
 
-    city_id = Column(BigInteger, primary_key=True, index=True)
-    country_code = Column(String(2), ForeignKey("country.country_code"), nullable=False)
-
-    name = Column(String, nullable=False)
-    timezone = Column(String, nullable=False)
-    currency = Column(String(3), nullable=False)
-
-    __table_args__ = (
-        UniqueConstraint("country_code", "name", name="uq_city_country_name"),
-    )
 
 
 class TenantCity(Base):
