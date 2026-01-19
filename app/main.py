@@ -7,6 +7,17 @@ from app.routes.fleet_owner import router as fleet_owner_router
 from app.routes.tenant_admin_fleet import router as tenant_admin_fleet_router
 
 
+from app.routes.fleet_owner_driver import router as fleet_owner_driver_router
+from app.routes.driver_docs import router as driver_docs_router
+from app.routes.tenant_admin_driver_verify import router as tenant_admin_driver_verify_router
+
+
+from app.routes.fleet_owner_vehicle import router as fleet_owner_vehicle_router
+from app.routes.tenant_admin_vehicle_verify import router as tenant_admin_vehicle_router
+
+
+
+
 app = FastAPI(
     title="Global Ride Platform",
     version="1.0.0"
@@ -19,7 +30,11 @@ app.include_router(tenant_admin_router)
 app.include_router(admin_tax_router)
 app.include_router(fleet_owner_router)
 app.include_router(tenant_admin_fleet_router)
-
+app.include_router(fleet_owner_driver_router)
+app.include_router(driver_docs_router)
+app.include_router(tenant_admin_driver_verify_router)
+app.include_router(fleet_owner_vehicle_router)
+app.include_router(tenant_admin_vehicle_router)
 
 @app.get("/health")
 async def health():
