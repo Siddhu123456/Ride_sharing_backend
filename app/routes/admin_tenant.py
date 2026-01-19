@@ -160,7 +160,6 @@ def bulk_add_cities_for_tenant_country(
             and_(
                 TenantCountry.tenant_id == tenant_id,
                 TenantCountry.country_code == country_code,
-                TenantCountry.is_active == True
             )
         )
     ).scalar_one_or_none()

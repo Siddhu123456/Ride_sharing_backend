@@ -1,6 +1,6 @@
 from datetime import date, datetime
 from typing import List, Optional
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 class TenantCreateRequest(BaseModel):
     name: str
@@ -25,14 +25,20 @@ class TenantCountryCreateRequest(BaseModel):
 
 
 class TenantCountryResponse(BaseModel):
-    tenant_country_id: int
     tenant_id: int
     country_code: str
-    is_active: bool
-    launched_on: Optional[date] = None
+
+    launched_on: Optional[datetime] = None
+
+    created_by: str = Field(default="admin")
+    created_on: datetime
+
+    updated_by: Optional[int] = None
+    updated_on: Optional[datetime] = None
 
     class Config:
-        from_attributes = True
+        from_attributes = True  
+
 
 
 class CityCreateRequest(BaseModel):

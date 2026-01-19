@@ -2,6 +2,7 @@ from pydantic import BaseModel
 from datetime import datetime
 from typing import Optional
 
+
 class TenantTaxRuleCreateRequest(BaseModel):
     country_code: str                 # "IN", "US"
     tax_type: Optional[str] = None    # "GST", "VAT"
@@ -18,7 +19,7 @@ class TenantTaxRuleResponse(BaseModel):
     rate: float
     effective_from: datetime
     effective_to: Optional[datetime]
-    created_by: Optional[int]
+    created_by: str
     created_on: datetime
 
     class Config:

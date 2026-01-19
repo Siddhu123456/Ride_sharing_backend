@@ -1,11 +1,10 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 class CountryResponse(BaseModel):
     country_code: str
     name: str
-    timezone: str
-    currency: str
+    default_timezone: str
+    default_currency: str
     phone_code: str
 
-    class Config:
-        from_attributes = True   # ✅ for SQLAlchemy
+    model_config = ConfigDict(from_attributes=True)

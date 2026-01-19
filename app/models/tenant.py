@@ -1,5 +1,5 @@
 from sqlalchemy import (
-    Column, BigInteger, String, Boolean, Date, TIMESTAMP, ForeignKey,
+    CHAR, VARCHAR, Column, BigInteger, String, Boolean, Date, TIMESTAMP, ForeignKey,
     UniqueConstraint, func
 )
 
@@ -21,17 +21,16 @@ class Tenant(Base):
 class TenantCountry(Base):
     __tablename__ = "tenant_country"
 
-    tenant_country_id = Column(BigInteger, primary_key=True, index=True)
-    tenant_id = Column(BigInteger, ForeignKey("tenant.tenant_id"), nullable=False)
-    country_code = Column(String(2), ForeignKey("country.country_code"), nullable=False)
+    tenant_id = Column(BigInteger, ForeignKey("tenant.tenant_id"), primary_key=True)
+    country_code = Column(CHAR(2), ForeignKey("country.country_code"), primary_key=True)
+    launched_on = Column(TIMESTAMP(timezone=True), nullable=True)
 
-    is_active = Column(Boolean, default=True)
-    launched_on = Column(Date, nullable=True)
-    created_on = Column(TIMESTAMP(timezone=True), server_default=func.now())
+    created_by = Column(VARCHAR(20), nullable=False, server_default="admin")
+    created_on = Column(TIMESTAMP(timezone=True), nullable=False, server_default=func.now())
 
-    __table_args__ = (
-        UniqueConstraint("tenant_id", "country_code", name="uq_tenant_country"),
-    )
+    updated_by = Column(BigInteger, ForeignKey("app_user.user_id"), nullable=True)
+    updated_on = Column(TIMESTAMP(timezone=True), nullable=True)
+
 
 
 class City(Base):

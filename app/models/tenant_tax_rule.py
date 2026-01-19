@@ -15,5 +15,5 @@ class TenantTaxRule(Base):
     effective_from = Column(TIMESTAMP(timezone=True), nullable=False)
     effective_to = Column(TIMESTAMP(timezone=True), nullable=True)
 
-    created_by = Column(BigInteger, ForeignKey("app_user.user_id"), nullable=True)
+    created_by = Column(String(20), nullable=False, default="admin")
     created_on = Column(TIMESTAMP(timezone=True), server_default=func.now(), nullable=False)
