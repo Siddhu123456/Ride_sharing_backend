@@ -80,3 +80,10 @@ class VehicleCategoryEnum(str, Enum):
 class VehicleDocumentTypeEnum(str, Enum):
     INSURANCE = "INSURANCE"
     REGISTRATION = "REGISTRATION"
+
+
+class PaymentStatusEnum(str, Enum):
+    PENDING = "PENDING"
+    SUCCESS = "SUCCESS"
+    FAILED = "FAILED"
+    REFUNDED = "REFUNDED"
