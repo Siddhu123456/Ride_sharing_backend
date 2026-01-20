@@ -10,5 +10,6 @@ router = APIRouter(prefix="/countries", tags=["Country"])
 
 @router.get("/", response_model=list[CountryResponse])
 def get_all_countries(db: Session = Depends(get_db)):
-    countries = db.execute(select(Country)).scalars().all()
+    stmt = select(Country).order_by(Country.name.asc())
+    countries = db.execute(stmt).scalars().all()
     return countries

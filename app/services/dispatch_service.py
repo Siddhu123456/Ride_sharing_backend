@@ -148,7 +148,7 @@ def assign_trip(db: Session, trip: Trip, driver_id: int, updated_by: int):
                 DriverShift.ended_at.is_(None)
             )
         )
-    ).scalar_one_or_none()
+    ).scalars().first()
 
     if shift:
         shift.status = "ON_TRIP"

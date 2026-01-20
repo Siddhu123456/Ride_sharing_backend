@@ -1,6 +1,6 @@
 from sqlalchemy import (
     Column, BigInteger, ForeignKey,
-    TIMESTAMP, Text, func
+    TIMESTAMP, Text, UniqueConstraint, func
 )
 from app.models.base import Base
 
@@ -28,3 +28,7 @@ class DispatchAttempt(Base):
 
     updated_by = Column(BigInteger, ForeignKey("app_user.user_id"), nullable=True)
     updated_on = Column(TIMESTAMP(timezone=True), nullable=True)
+
+    __table_args__ = (
+        UniqueConstraint("trip_id", "driver_id", name="uq_dispatch_attempt_trip_driver"),
+    )
