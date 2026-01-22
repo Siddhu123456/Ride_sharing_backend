@@ -1,3 +1,4 @@
+from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from sqlalchemy import select, and_
@@ -5,11 +6,13 @@ from starlette import status
 
 from app.core.database import get_db
 from app.core.deps import get_current_user_session
+from app.models.user import AppUser
 from app.models.user_session import UserSession
-from app.models.tenant import Tenant
+from app.models.tenant import Tenant, TenantCountry
 from app.models.fleet import Fleet
 from app.models.fleet_document import FleetDocument
 
+from app.schemas.admin_tenant import TenantResponse
 from app.schemas.fleet_owner_apply import (
     FleetApplyRequest, FleetApplyResponse
 )
@@ -22,6 +25,51 @@ from app.services.fleet_workflow import (
 )
 
 router = APIRouter(prefix="/fleet-owner", tags=["Fleet Owner Apply"])
+
+# ✅ CHECK IF USER HAS A FLEET (For Redirect)
+@router.get("/me", response_model=Optional[FleetApplyResponse])
+def get_my_fleet(
+    db: Session = Depends(get_db),
+    session: UserSession = Depends(get_current_user_session) # ✅ Validates Token
+):
+    # Check if this user ID exists in the fleet table
+    fleet = db.execute(
+        select(Fleet).where(Fleet.owner_user_id == session.user_id)
+    ).scalar_one_or_none()
+    
+    if not fleet:
+        # ✅ This 404 is EXPECTED for new applicants. 
+        # The frontend will catch this and show the registration form.
+        raise HTTPException(status_code=404, detail="No fleet found")
+        
+    return fleet
+
+
+# ✅ LIST TENANTS (Filtered by User's Country)
+@router.get("/tenants", response_model=List[TenantResponse])
+def list_tenants_for_user(
+    db: Session = Depends(get_db),
+    session: UserSession = Depends(get_current_user_session)
+):
+    # 1. Get User's Country
+    user = db.execute(
+        select(AppUser).where(AppUser.user_id == session.user_id)
+    ).scalar_one_or_none()
+    
+    if not user or not user.country_code:
+        raise HTTPException(status_code=400, detail="User country not defined")
+
+    # 2. Find Tenants operating in that country
+    # Join Tenant -> TenantCountry where country_code matches user
+    stmt = (
+        select(Tenant)
+        .join(TenantCountry, Tenant.tenant_id == TenantCountry.tenant_id)
+        .where(TenantCountry.country_code == user.country_code)
+    )
+    
+    tenants = db.execute(stmt).scalars().all()
+    return tenants
+
 
 
 # ✅ Apply for Fleet Owner under a tenant
