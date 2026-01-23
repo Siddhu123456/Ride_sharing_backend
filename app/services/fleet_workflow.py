@@ -46,7 +46,7 @@ def compute_doc_status(uploaded_docs: list[FleetDocument]):
 def auto_approve_fleet_if_ready(db: Session, fleet: Fleet):
     """
     Called after every document verification.
-    If all 4 docs approved by same tenant admin => approve fleet + assign role.
+    If all 4 docs approved by same tenant admin => approve fleet.
     """
     uploaded_docs = get_fleet_uploaded_docs(db, fleet.fleet_id)
     missing, all_uploaded, all_approved, approved_by_same_admin = compute_doc_status(uploaded_docs)
@@ -54,31 +54,11 @@ def auto_approve_fleet_if_ready(db: Session, fleet: Fleet):
     if not (all_uploaded and all_approved and approved_by_same_admin):
         return False
 
-    # ✅ get the admin who approved everything
     approving_admin_user_id = uploaded_docs[0].verified_by
 
-    # ✅ update fleet approval fields
     fleet.approval_status = ApprovalStatusEnum.APPROVED
     fleet.status = AccountStatusEnum.ACTIVE
     fleet.verified_by = approving_admin_user_id
     fleet.verified_on = datetime.now(timezone.utc)
-
-    # ✅ assign role if not exists
-    role_exists = db.execute(
-        select(UserRole).where(
-            and_(
-                UserRole.user_id == fleet.owner_user_id,
-                UserRole.user_role == TenantRoleEnum.FLEET_OWNER,
-                UserRole.is_active == True
-            )
-        )
-    ).scalar_one_or_none()
-
-    if not role_exists:
-        db.add(UserRole(
-            user_id=fleet.owner_user_id,
-            user_role=TenantRoleEnum.FLEET_OWNER,
-            is_active=True
-        ))
 
     return True

@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Form, UploadFile, File
 from sqlalchemy.orm import Session
 from sqlalchemy import select, and_
 from starlette import status
@@ -10,6 +10,7 @@ from app.models.user_session import UserSession
 from app.models.fleet import Fleet
 from app.models.vehicle import Vehicle
 from app.models.vehicle_document import VehicleDocument
+from app.schemas.enums import VehicleDocumentTypeEnum
 
 from app.schemas.vehicle_owner import VehicleCreateRequest, VehicleResponse
 from app.schemas.vehicle_docs import (
@@ -17,6 +18,7 @@ from app.schemas.vehicle_docs import (
 )
 
 from app.services.vehicle_workflow import get_vehicle_docs, compute_vehicle_doc_status
+from app.utils.file_storage import save_upload_file
 
 router = APIRouter(prefix="/fleet-owner", tags=["Fleet Owner - Vehicles"])
 
@@ -65,25 +67,31 @@ def add_vehicle_to_fleet(
 @router.post("/vehicles/{vehicle_id}/documents", response_model=VehicleDocumentResponse, status_code=201)
 def upload_vehicle_document(
     vehicle_id: int,
-    payload: VehicleDocumentUploadRequest,
+    document_type: VehicleDocumentTypeEnum = Form(...),
+    file: UploadFile = File(...),
     db: Session = Depends(get_db),
     session: UserSession = Depends(get_current_user_session),
 ):
-    vehicle = db.execute(select(Vehicle).where(Vehicle.vehicle_id == vehicle_id)).scalar_one_or_none()
+    vehicle = db.execute(
+        select(Vehicle).where(Vehicle.vehicle_id == vehicle_id)
+    ).scalar_one_or_none()
+
     if not vehicle:
         raise HTTPException(status_code=404, detail="Vehicle not found")
 
-    # ✅ ensure this vehicle belongs to fleet owned by session user
-    fleet = db.execute(select(Fleet).where(Fleet.fleet_id == vehicle.fleet_id)).scalar_one_or_none()
+    fleet = db.execute(
+        select(Fleet).where(Fleet.fleet_id == vehicle.fleet_id)
+    ).scalar_one_or_none()
+
     if not fleet or fleet.owner_user_id != session.user_id:
         raise HTTPException(status_code=403, detail="Not allowed")
 
-    # ✅ stop reupload same type (if constraint added)
+    # ✅ stop reupload same type
     existing = db.execute(
         select(VehicleDocument).where(
             and_(
                 VehicleDocument.vehicle_id == vehicle_id,
-                VehicleDocument.document_type == payload.document_type
+                VehicleDocument.document_type == document_type
             )
         )
     ).scalar_one_or_none()
@@ -91,10 +99,12 @@ def upload_vehicle_document(
     if existing:
         raise HTTPException(status_code=400, detail="This document type already uploaded")
 
+    stored_path = save_upload_file(file, folder=f"vehicle_docs/{vehicle_id}")
+
     doc = VehicleDocument(
         vehicle_id=vehicle_id,
-        document_type=payload.document_type,
-        file_url=payload.file_url,
+        document_type=document_type,
+        file_url=stored_path,
         created_by=session.user_id
     )
 

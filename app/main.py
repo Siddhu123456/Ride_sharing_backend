@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-
+import os
 
 from app.routes import auth,country,admin_tenant
 from app.routes.admin_tenant_admin import router as tenant_admin_router
@@ -29,6 +29,7 @@ from app.routes.driver_offer_routes import router as driver_offer_router
 from app.routes.otp_routes import router as otp_router
 from app.routes.trip_lifecycle_routes import router as lifecycle_router
 
+from fastapi.staticfiles import StaticFiles
 
 
 
@@ -71,6 +72,10 @@ app.include_router(trip_router)
 app.include_router(driver_offer_router)
 app.include_router(otp_router)
 app.include_router(lifecycle_router)
+
+
+os.makedirs("uploads", exist_ok=True)
+app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
 
 @app.get("/health")
 async def health():

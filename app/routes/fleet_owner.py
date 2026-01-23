@@ -1,5 +1,5 @@
 from typing import List, Optional
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Form, UploadFile, File
 from sqlalchemy.orm import Session
 from sqlalchemy import select, and_
 from starlette import status
@@ -7,12 +7,14 @@ from starlette import status
 from app.core.database import get_db
 from app.core.deps import get_current_user_session
 from app.models.user import AppUser
+from app.models.user_role import UserRole
 from app.models.user_session import UserSession
 from app.models.tenant import Tenant, TenantCountry
 from app.models.fleet import Fleet
 from app.models.fleet_document import FleetDocument
 
 from app.schemas.admin_tenant import TenantResponse
+from app.schemas.enums import FleetDocumentTypeEnum, TenantRoleEnum
 from app.schemas.fleet_owner_apply import (
     FleetApplyRequest, FleetApplyResponse
 )
@@ -23,6 +25,7 @@ from app.services.fleet_workflow import (
     get_fleet_uploaded_docs,
     compute_doc_status
 )
+from app.utils.file_storage import save_upload_file
 
 router = APIRouter(prefix="/fleet-owner", tags=["Fleet Owner Apply"])
 
@@ -100,6 +103,7 @@ def apply_fleet_owner(
     if existing:
         raise HTTPException(status_code=400, detail="Fleet application already exists")
 
+    # ✅ create fleet application
     fleet = Fleet(
         tenant_id=payload.tenant_id,
         owner_user_id=session.user_id,
@@ -110,14 +114,35 @@ def apply_fleet_owner(
     db.add(fleet)
     db.commit()
     db.refresh(fleet)
+
+    # ✅ assign FLEET_OWNER role immediately after apply
+    role_exists = db.execute(
+        select(UserRole).where(
+            and_(
+                UserRole.user_id == session.user_id,
+                UserRole.user_role == TenantRoleEnum.FLEET_OWNER,
+                UserRole.is_active == True
+            )
+        )
+    ).scalar_one_or_none()
+
+    if not role_exists:
+        db.add(UserRole(
+            user_id=session.user_id,
+            user_role=TenantRoleEnum.FLEET_OWNER,
+            is_active=True
+        ))
+        db.commit()
+
     return fleet
 
 
-# ✅ Upload Fleet Document (one per type)
 @router.post("/fleets/{fleet_id}/documents", response_model=FleetDocumentResponse, status_code=201)
 def upload_fleet_document(
     fleet_id: int,
-    payload: FleetDocumentUploadRequest,
+    document_type: FleetDocumentTypeEnum = Form(...),
+    document_number: str | None = Form(None),
+    file: UploadFile = File(...),
     db: Session = Depends(get_db),
     session: UserSession = Depends(get_current_user_session)
 ):
@@ -136,7 +161,7 @@ def upload_fleet_document(
         select(FleetDocument).where(
             and_(
                 FleetDocument.fleet_id == fleet_id,
-                FleetDocument.document_type == payload.document_type
+                FleetDocument.document_type == document_type
             )
         )
     ).scalar_one_or_none()
@@ -144,11 +169,14 @@ def upload_fleet_document(
     if existing:
         raise HTTPException(status_code=400, detail="This document type is already uploaded")
 
+    # ✅ store file
+    stored_path = save_upload_file(file, folder=f"fleet_docs/{fleet_id}")
+
     doc = FleetDocument(
         fleet_id=fleet_id,
-        document_type=payload.document_type,
-        file_url=payload.file_url,
-        document_number=payload.document_number,
+        document_type=document_type,
+        file_url=stored_path,
+        document_number=document_number,
         created_by=session.user_id
     )
 
@@ -156,7 +184,6 @@ def upload_fleet_document(
     db.commit()
     db.refresh(doc)
     return doc
-
 
 # ✅ User sees what's uploaded + what's missing (Frontend uses this)
 @router.get("/fleets/{fleet_id}/documents/status", response_model=FleetDocumentStatusResponse)
