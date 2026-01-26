@@ -67,7 +67,7 @@ class DriverDocumentTypeEnum(str, Enum):
 class DriverTypeEnum(str, Enum):
     BIKE = "BIKE"
     AUTO = "AUTO"
-    CAR = "CAR"
+    CAB = "CAB"
 
 
 class VehicleCategoryEnum(str, Enum):

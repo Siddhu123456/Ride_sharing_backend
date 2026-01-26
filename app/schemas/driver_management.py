@@ -1,9 +1,9 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, EmailStr
 from datetime import datetime
 from app.schemas.enums import DriverTypeEnum
 
-class AddDriverToFleetRequest(BaseModel):
-    driver_user_id: int
+class AddDriverToFleetByEmailRequest(BaseModel):
+    email: EmailStr
     driver_type: DriverTypeEnum
 
 class FleetDriverResponse(BaseModel):

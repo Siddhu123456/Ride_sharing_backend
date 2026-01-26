@@ -5,8 +5,10 @@ from starlette import status
 
 from app.core.database import get_db
 from app.core.role_guard import require_role
+from app.models.driver_profile import DriverProfile
 from app.models.fleet import Fleet
 from app.models.fleet_driver import FleetDriver
+from app.models.user import AppUser
 from app.models.user_session import UserSession
 from app.models.vehicle import Vehicle
 from app.models.driver_vehicle_assignment import DriverVehicleAssignment
@@ -20,23 +22,23 @@ from app.schemas.fleet_vehicle_assignment import (
 router = APIRouter(prefix="/fleet-owner", tags=["Fleet Owner Vehicle Assignment"])
 
 
-@router.get("/fleets/{fleet_id}/vehicles")
-def list_fleet_vehicles(
-        fleet_id: int,
-        db: Session = Depends(get_db),
-        session: UserSession = Depends(require_role(TenantRoleEnum.FLEET_OWNER))
-):
-    vehicles = db.execute(
-        select(Vehicle).where(
-            and_(
-                Vehicle.fleet_id == fleet_id,
-                Vehicle.approval_status == "APPROVED",
-                Vehicle.status == "ACTIVE"
-            )
-        )
-    ).scalars().all()
+# @router.get("/fleets/{fleet_id}/vehicles")
+# def list_fleet_vehicles(
+#         fleet_id: int,
+#         db: Session = Depends(get_db),
+#         session: UserSession = Depends(require_role(TenantRoleEnum.FLEET_OWNER))
+# ):
+#     vehicles = db.execute(
+#         select(Vehicle).where(
+#             and_(
+#                 Vehicle.fleet_id == fleet_id,
+#                 Vehicle.approval_status == "APPROVED",
+#                 Vehicle.status == "ACTIVE"
+#             )
+#         )
+#     ).scalars().all()
 
-    return {"vehicles": vehicles}
+#     return {"vehicles": vehicles}
 
 
 @router.get("/fleets/{fleet_id}/drivers/available")

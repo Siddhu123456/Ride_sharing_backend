@@ -29,6 +29,8 @@ from app.routes.driver_offer_routes import router as driver_offer_router
 from app.routes.otp_routes import router as otp_router
 from app.routes.trip_lifecycle_routes import router as lifecycle_router
 
+from app.routes.fleet_overview_routes import router as fleet_overview_router
+
 from fastapi.staticfiles import StaticFiles
 
 
@@ -72,7 +74,7 @@ app.include_router(trip_router)
 app.include_router(driver_offer_router)
 app.include_router(otp_router)
 app.include_router(lifecycle_router)
-
+app.include_router(fleet_overview_router)
 
 os.makedirs("uploads", exist_ok=True)
 app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")

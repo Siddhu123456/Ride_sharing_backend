@@ -1,0 +1,9 @@
+*what are java streams?
+	 Streams represent pipeline through which data will flow and streams will perform various operations on that data inorder to    transform the data.
+
+Streams contains intermediate operations and a terminal operation that give the output.
+
+-> Streams are lazy in nature . Intermediate operations just create the pipeline, the created pipeline is triggered by the Terminal operation to give output.
+
+
+

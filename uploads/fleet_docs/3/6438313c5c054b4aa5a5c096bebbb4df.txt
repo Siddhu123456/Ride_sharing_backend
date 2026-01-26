@@ -1,0 +1,386 @@
+🚀 FULL ROADMAP: FASTAPI + REACT (MULTI-TENANT RIDE PLATFORM)
+🧱 PHASE 0 — FOUNDATIONS (DO THIS FIRST)
+Backend
+
+Python 3.11+
+
+FastAPI
+
+SQLAlchemy 2.0 (async)
+
+Alembic (migrations)
+
+PostgreSQL
+
+Pydantic v2
+
+JWT (access + refresh)
+
+Redis (sessions, caching, locks)
+
+Celery / BackgroundTasks (later)
+
+Frontend
+
+React 18
+
+Vite
+
+TypeScript
+
+React Router
+
+TanStack Query
+
+Tailwind / MUI
+
+🔐 PHASE 1 — AUTH, TENANTS & ROLES (CORE)
+Backend
+
+Implement first, everything depends on this
+
+APIs
+
+/auth/register
+
+/auth/login
+
+/auth/refresh
+
+/auth/logout
+
+/auth/switch-role
+
+Logic
+
+Create app_user
+
+Create user_auth
+
+Create user_session
+
+Enforce:
+
+One active role per session
+
+is_locked checks
+
+Tenant-scoped admin access
+
+Tenant admin onboarding
+
+Create tenant
+
+Assign TENANT_ADMIN
+
+Assign cities & countries
+
+Frontend
+
+Login page
+
+Role selector modal (Rider / Driver / Owner / Admin)
+
+Protected routes per role
+
+👤 PHASE 2 — USER PROFILES & KYC
+Backend
+APIs
+
+/profile/rider
+
+/profile/driver
+
+/profile/fleet-owner
+
+/kyc/upload
+
+/kyc/status
+
+Logic
+
+KYC mandatory for:
+
+Drivers
+
+Fleet owners
+
+Approval workflow for admin
+
+Document storage (S3 / MinIO)
+
+Frontend
+
+Profile dashboard
+
+KYC upload flow
+
+Status tracking UI
+
+🚗 PHASE 3 — VEHICLES & FLEET MANAGEMENT
+Backend
+APIs
+
+/vehicles/bike
+
+/vehicles/auto
+
+/vehicles/car
+
+/car/assign-driver
+
+/driver/invite
+
+Logic
+
+Bike/Auto → owner == driver
+
+Car → owner assigns drivers by shift
+
+Admin vehicle approval
+
+Frontend
+
+Vehicle list
+
+Add vehicle form
+
+Shift calendar UI
+
+Driver invite flow
+
+📍 PHASE 4 — DRIVER AVAILABILITY & LOCATION
+Backend
+APIs
+
+/driver/go-online
+
+/driver/go-offline
+
+/driver/location (WebSocket / HTTP)
+
+/driver/heartbeat
+
+Logic
+
+Redis for live availability
+
+DB for durability
+
+Kill ghost drivers automatically
+
+Frontend
+
+Driver online/offline toggle
+
+Background GPS updates (mobile-first)
+
+Map preview (optional)
+
+🚕 PHASE 5 — TRIP BOOKING & DISPATCH (CORE VALUE)
+Backend
+APIs
+
+/trip/request
+
+/trip/cancel
+
+/trip/accept
+
+/trip/status
+
+Dispatch Engine
+
+Fetch nearby drivers
+
+Create trip_dispatch_attempt
+
+Create trip_driver_candidate
+
+Create trip_driver_offer
+
+Handle accept / timeout / retry
+
+Tech
+
+Redis (locks + queues)
+
+Background workers
+
+Frontend
+
+Rider booking screen
+
+Driver incoming request modal
+
+Live trip status screen
+
+💸 PHASE 6 — PRICING, SURGE & COUPONS
+Backend
+Pricing
+
+Distance calculation
+
+Time window pricing
+
+Commission deduction
+
+Surge
+
+Trigger via dispatch telemetry
+
+Lock surge at booking
+
+Coupons
+
+Validate
+
+Apply
+
+Track redemption
+
+Frontend
+
+Fare estimate UI
+
+Surge banner
+
+Coupon apply screen
+
+💳 PHASE 7 — PAYMENTS & WALLETS
+Backend
+APIs
+
+/payment/initiate
+
+/payment/confirm
+
+/wallet/balance
+
+/wallet/transactions
+
+Logic
+
+Online payments → gateway
+
+Offline → wallet debit
+
+Driver/Fleet owner settlement prep
+
+Frontend
+
+Payment screen
+
+Wallet dashboard
+
+Transaction history
+
+⭐ PHASE 8 — RATINGS, SUPPORT & SAFETY
+Backend
+
+/trip/rate
+
+/support/ticket
+
+/support/sos
+
+Frontend
+
+Rating modal
+
+Support center
+
+Emergency button (driver & rider)
+
+📊 PHASE 9 — ANALYTICS & ADMIN DASHBOARD
+Backend
+
+Aggregated queries
+
+Pre-computed metrics
+
+CSV exports
+
+Frontend
+
+Tenant admin dashboard
+
+City performance
+
+Driver KPIs
+
+Revenue reports
+
+🧠 PHASE 10 — HARDENING & SCALE
+
+Rate limiting
+
+Audit logging
+
+Data partitioning (by tenant)
+
+Read replicas
+
+Background cleanup jobs
+
+Feature flags
+
+🧩 BACKEND PROJECT STRUCTURE (RECOMMENDED)
+app/
+ ├── main.py
+ ├── core/        # config, security
+ ├── models/      # SQLAlchemy
+ ├── schemas/     # Pydantic
+ ├── routers/     # API routes
+ ├── services/    # business logic
+ ├── dispatch/    # matching engine
+ ├── workers/     # async jobs
+ └── tests/
+
+🧩 FRONTEND STRUCTURE
+src/
+ ├── api/
+ ├── auth/
+ ├── rider/
+ ├── driver/
+ ├── owner/
+ ├── admin/
+ ├── components/
+ └── routes/
+
+🔑 CRITICAL IMPLEMENTATION RULES
+🔒 Tenant Isolation
+
+Every query → filter by tenant_id
+
+Enforce in service layer
+
+🕒 Timezones
+
+DB → UTC
+
+UI → tenant timezone
+
+📍 Location
+
+Redis for real-time
+
+DB for history
+
+🧠 FINAL ADVICE (IMPORTANT)
+
+👉 Do NOT build everything at once
+
+Build in this order:
+
+Auth + roles
+
+Driver availability
+
+Trip + dispatch
+
+Payments
+
+Everything else
+
+That’s how Uber was built.
