@@ -1,6 +1,6 @@
 from sqlalchemy import (
     Column, BigInteger, ForeignKey,
-    TIMESTAMP, Numeric, func
+    TIMESTAMP, Numeric, Text, func
 )
 from sqlalchemy.dialects.postgresql import ENUM
 
@@ -10,6 +10,7 @@ from app.schemas.enums import (
     PaymentStatusEnum,
     VehicleCategoryEnum
 )
+
 
 class Trip(Base):
     __tablename__ = "trip"
@@ -24,10 +25,15 @@ class Trip(Base):
     city_id = Column(BigInteger, ForeignKey("city.city_id"), nullable=False, index=True)
     zone_id = Column(BigInteger, ForeignKey("zone.zone_id"), nullable=True, index=True)
 
+    # 📍 Coordinates
     pickup_lat = Column(Numeric(9, 6), nullable=False)
     pickup_lng = Column(Numeric(9, 6), nullable=False)
     drop_lat = Column(Numeric(9, 6), nullable=True)
     drop_lng = Column(Numeric(9, 6), nullable=True)
+
+    # 🏷 Human readable addresses
+    pickup_address = Column(Text, nullable=True)
+    drop_address = Column(Text, nullable=True)
 
     vehicle_category = Column(
         ENUM(VehicleCategoryEnum, name="vehicle_category_enum"),
@@ -42,23 +48,23 @@ class Trip(Base):
     )
 
     requested_at = Column(TIMESTAMP(timezone=True), nullable=False, server_default=func.now())
-    assigned_at = Column(TIMESTAMP(timezone=True), nullable=True)
-    picked_up_at = Column(TIMESTAMP(timezone=True), nullable=True)
-    completed_at = Column(TIMESTAMP(timezone=True), nullable=True)
-    cancelled_at = Column(TIMESTAMP(timezone=True), nullable=True)
+    assigned_at = Column(TIMESTAMP(timezone=True))
+    picked_up_at = Column(TIMESTAMP(timezone=True))
+    completed_at = Column(TIMESTAMP(timezone=True))
+    cancelled_at = Column(TIMESTAMP(timezone=True))
 
-    fare_amount = Column(Numeric(10, 2), nullable=True)
-    driver_earning = Column(Numeric(10, 2), nullable=True)
-    platform_fee = Column(Numeric(10, 2), nullable=True)
+    fare_amount = Column(Numeric(10, 2))
+    driver_earning = Column(Numeric(10, 2))
+    platform_fee = Column(Numeric(10, 2))
 
     payment_status = Column(
         ENUM(PaymentStatusEnum, name="payment_status_enum"),
-        nullable=True,
+        nullable=False,
         server_default="PENDING"
     )
 
-    created_by = Column(BigInteger, ForeignKey("app_user.user_id"), nullable=True)
-    created_on = Column(TIMESTAMP(timezone=True), nullable=False, server_default=func.now())
+    created_by = Column(BigInteger, ForeignKey("app_user.user_id"))
+    created_on = Column(TIMESTAMP(timezone=True), server_default=func.now())
 
-    updated_by = Column(BigInteger, ForeignKey("app_user.user_id"), nullable=True)
-    updated_on = Column(TIMESTAMP(timezone=True), nullable=True)
+    updated_by = Column(BigInteger, ForeignKey("app_user.user_id"))
+    updated_on = Column(TIMESTAMP(timezone=True))

@@ -1,0 +1,4 @@
+
+
+-- 5. Seed a Tenant (For Phase 2 usage)
+INSERT INTO tenant (name, slug) VALUES ('Uber Clone', 'uber-clone');

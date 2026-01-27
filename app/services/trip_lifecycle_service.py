@@ -8,7 +8,6 @@ from app.schemas.enums import TripStatusEnum
 
 
 def set_driver_shift_online(db: Session, driver_id: int):
-    # ✅ Get the MOST RECENT active shift (ended_at is NULL)
     shift = db.execute(
         select(DriverShift)
         .where(
@@ -17,13 +16,12 @@ def set_driver_shift_online(db: Session, driver_id: int):
                 DriverShift.ended_at.is_(None)
             )
         )
-        .order_by(desc(DriverShift.started_at))   # ✅ newest shift
+        .order_by(desc(DriverShift.started_at))
         .limit(1)
     ).scalar_one_or_none()
 
     if shift:
         shift.status = "ONLINE"
-        shift.updated_on = datetime.now(timezone.utc)
         db.flush()
 
 
@@ -42,8 +40,8 @@ def set_driver_shift_on_trip(db: Session, driver_id: int):
 
     if shift:
         shift.status = "ON_TRIP"
-        shift.updated_on = datetime.now(timezone.utc)
         db.flush()
+
 
 
 def cancel_trip(db: Session, trip: Trip, cancelled_by_user_id: int):
@@ -52,8 +50,9 @@ def cancel_trip(db: Session, trip: Trip, cancelled_by_user_id: int):
     trip.updated_by = cancelled_by_user_id
     trip.updated_on = datetime.now(timezone.utc)
 
-    # if driver already assigned → set shift back ONLINE
+    # Driver goes back ONLINE if already assigned
     if trip.driver_id:
         set_driver_shift_online(db, trip.driver_id)
 
     db.flush()
+
