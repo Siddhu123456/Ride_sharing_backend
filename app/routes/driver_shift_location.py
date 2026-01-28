@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from sqlalchemy import select, and_, or_
 from starlette import status
-from datetime import datetime, timezone
+from datetime import datetime, time, timezone, timedelta
 
 from app.core.database import get_db
 
@@ -21,30 +21,73 @@ from app.schemas.driver_location import (
     UpdateDriverLocationRequest,
     DriverLocationResponse
 )
+from app.schemas.enums import DriverShiftStatusEnum
 
 router = APIRouter(prefix="/drivers", tags=["Driver Shift & Location"])
 
 
 # =========================================================
-# ✅ Helper: Auto end shift if expected_end_at is passed
+# 🔧 TIME HELPERS
 # =========================================================
-def auto_end_shift_if_required(db: Session, shift: DriverShift, now: datetime):
-    if shift and shift.status == "ONLINE" and shift.ended_at is None:
-        if shift.expected_end_at is not None and now >= shift.expected_end_at:
-            shift.status = "OFFLINE"
-            shift.ended_at = shift.expected_end_at
-            db.commit()
-            db.refresh(shift)
-            return True
+
+def compute_expected_end_at(
+    start_time: time,
+    end_time: time,
+    now: datetime
+) -> datetime:
+    """
+    Convert assignment TIME into today's TIMESTAMPTZ.
+    Handles overnight shifts automatically.
+    """
+    today = now.date()
+    end_dt = datetime.combine(today, end_time, tzinfo=now.tzinfo)
+
+    # Overnight shift (e.g. 22:00 → 06:00)
+    if end_time <= start_time:
+        end_dt += timedelta(days=1)
+
+    return end_dt
+
+
+def is_now_within_assignment(
+    start_time: time,
+    end_time: time,
+    now_time: time
+) -> bool:
+    """
+    Check if current time falls inside a DAILY assignment window.
+    Handles overnight shifts.
+    """
+    if start_time <= end_time:
+        return start_time <= now_time <= end_time
+    else:
+        # Overnight window
+        return now_time >= start_time or now_time <= end_time
+
+
+# =========================================================
+# ✅ Auto end shift if expected_end_at passed
+# =========================================================
+def auto_end_shift_if_required(
+    db: Session,
+    shift: DriverShift,
+    now: datetime
+) -> bool:
+    if (
+        shift.status == DriverShiftStatusEnum.ONLINE
+        and shift.ended_at is None
+        and shift.expected_end_at is not None
+        and now >= shift.expected_end_at
+    ):
+        shift.status = DriverShiftStatusEnum.OFFLINE
+        shift.ended_at = shift.expected_end_at
+        db.commit()
+        return True
     return False
 
 
 # =========================================================
 # ✅ 1) Start Shift (Go ONLINE)
-# Rules:
-# - Must have valid assignment window for NOW
-# - start_time <= now <= end_time
-# - Shift expected_end_at = assignment.end_time
 # =========================================================
 @router.post(
     "/shifts/start",
@@ -55,6 +98,7 @@ def start_driver_shift(
     payload: StartDriverShiftRequest,
     db: Session = Depends(get_db)
 ):
+    # Validate driver
     driver = db.execute(
         select(AppUser).where(AppUser.user_id == payload.driver_id)
     ).scalar_one_or_none()
@@ -62,59 +106,68 @@ def start_driver_shift(
     if not driver:
         raise HTTPException(status_code=404, detail="Driver not found")
 
-    # ✅ prevent multiple online shifts
-    existing_online = db.execute(
+    # Prevent multiple online shifts
+    existing = db.execute(
         select(DriverShift).where(
             and_(
                 DriverShift.driver_id == payload.driver_id,
-                DriverShift.status == "ONLINE",
+                DriverShift.status == DriverShiftStatusEnum.ONLINE,
                 DriverShift.ended_at.is_(None)
             )
         )
     ).scalar_one_or_none()
 
-    if existing_online:
+    if existing:
         raise HTTPException(status_code=400, detail="Driver already ONLINE")
 
     now = datetime.now(timezone.utc)
+    now_time = now.time()
 
-    # ✅ MUST: assignment must exist and be valid for current time
-    assignment = db.execute(
+    # Find valid DAILY assignment
+    assignments = db.execute(
         select(DriverVehicleAssignment).where(
-            and_(
-                DriverVehicleAssignment.driver_id == payload.driver_id,
-                DriverVehicleAssignment.start_time <= now,
-                or_(
-                    DriverVehicleAssignment.end_time.is_(None),
-                    DriverVehicleAssignment.end_time >= now
-                )
-            )
-        ).order_by(DriverVehicleAssignment.start_time.desc())
-    ).scalar_one_or_none()
+            DriverVehicleAssignment.driver_id == payload.driver_id
+        )
+    ).scalars().all()
+
+    assignment = None
+    for a in assignments:
+        if is_now_within_assignment(a.start_time, a.end_time, now_time):
+            assignment = a
+            break
 
     if not assignment:
         raise HTTPException(
             status_code=400,
-            detail="No valid vehicle assignment found for current time. You can go ONLINE only during assigned slot."
+            detail="No active vehicle assignment for current time window"
         )
 
-    # ✅ create shift using assignment details
+    # Compute expected_end_at TIMESTAMPTZ
+    expected_end_at = compute_expected_end_at(
+        assignment.start_time,
+        assignment.end_time,
+        now
+    )
+
+    # Create shift
     shift = DriverShift(
         driver_id=payload.driver_id,
         tenant_id=payload.tenant_id,
         vehicle_id=assignment.vehicle_id,
-        status="ONLINE",
+        status=DriverShiftStatusEnum.ONLINE,
         started_at=now,
-        ended_at=None,
-        expected_end_at=assignment.end_time,
+        expected_end_at=expected_end_at,
         last_latitude=payload.latitude,
         last_longitude=payload.longitude
     )
+
     db.add(shift)
 
-    # ✅ update driver_location upsert
+    # Upsert driver_location
     loc = db.execute(
-        select(DriverLocation).where(DriverLocation.driver_id == payload.driver_id)
+        select(DriverLocation).where(
+            DriverLocation.driver_id == payload.driver_id
+        )
     ).scalar_one_or_none()
 
     if loc:
@@ -129,7 +182,7 @@ def start_driver_shift(
             last_updated=now
         ))
 
-    # ✅ location history entry
+    # Location history
     db.add(DriverLocationHistory(
         driver_id=payload.driver_id,
         latitude=payload.latitude,
@@ -144,9 +197,6 @@ def start_driver_shift(
 
 # =========================================================
 # ✅ 2) Update Location
-# Rules:
-# - Driver must be ONLINE
-# - If assignment time ended => auto end shift
 # =========================================================
 @router.post(
     "/location/update",
@@ -159,30 +209,34 @@ def update_driver_location(
 ):
     now = datetime.now(timezone.utc)
 
-    # ✅ get active shift
     shift = db.execute(
         select(DriverShift).where(
             and_(
                 DriverShift.driver_id == payload.driver_id,
-                DriverShift.status == "ONLINE",
+                DriverShift.status == DriverShiftStatusEnum.ONLINE,
                 DriverShift.ended_at.is_(None)
             )
         ).order_by(DriverShift.started_at.desc())
     ).scalar_one_or_none()
 
     if not shift:
-        raise HTTPException(status_code=400, detail="Driver is not ONLINE. Start shift first.")
+        raise HTTPException(
+            status_code=400,
+            detail="Driver is not ONLINE"
+        )
 
-    # ✅ auto end shift if assignment ended
+    # Auto end shift
     if auto_end_shift_if_required(db, shift, now):
         raise HTTPException(
             status_code=400,
-            detail="Shift ended automatically because assignment time is completed."
+            detail="Shift automatically ended"
         )
 
-    # ✅ update driver_location (upsert)
+    # Update location
     loc = db.execute(
-        select(DriverLocation).where(DriverLocation.driver_id == payload.driver_id)
+        select(DriverLocation).where(
+            DriverLocation.driver_id == payload.driver_id
+        )
     ).scalar_one_or_none()
 
     if loc:
@@ -198,7 +252,6 @@ def update_driver_location(
         )
         db.add(loc)
 
-    # ✅ location history always
     db.add(DriverLocationHistory(
         driver_id=payload.driver_id,
         latitude=payload.latitude,
@@ -206,7 +259,6 @@ def update_driver_location(
         recorded_at=now
     ))
 
-    # ✅ shift last lat lng
     shift.last_latitude = payload.latitude
     shift.last_longitude = payload.longitude
 
@@ -216,7 +268,7 @@ def update_driver_location(
 
 
 # =========================================================
-# ✅ 3) End Shift manually (Go OFFLINE)
+# ✅ 3) End Shift Manually
 # =========================================================
 @router.post(
     "/shifts/end",
@@ -232,16 +284,19 @@ def end_driver_shift(
         select(DriverShift).where(
             and_(
                 DriverShift.driver_id == payload.driver_id,
-                DriverShift.status == "ONLINE",
+                DriverShift.status == DriverShiftStatusEnum.ONLINE,
                 DriverShift.ended_at.is_(None)
             )
-        ).order_by(DriverShift.started_at.desc())
+        )
     ).scalar_one_or_none()
 
     if not shift:
-        raise HTTPException(status_code=404, detail="No active ONLINE shift found")
+        raise HTTPException(
+            status_code=404,
+            detail="No active shift found"
+        )
 
-    shift.status = "OFFLINE"
+    shift.status = DriverShiftStatusEnum.OFFLINE
     shift.ended_at = now
 
     db.commit()
@@ -249,8 +304,7 @@ def end_driver_shift(
 
 
 # =========================================================
-# ✅ 4) Get current shift (auto end if expired)
-# GET /drivers/{driver_id}/shift/current
+# ✅ 4) Get Current Shift
 # =========================================================
 @router.get(
     "/{driver_id}/shift/current",
@@ -272,9 +326,7 @@ def get_current_driver_shift(
     ).scalar_one_or_none()
 
     if not shift:
-        raise HTTPException(status_code=404, detail="No active shift found")
+        raise HTTPException(status_code=404, detail="No active shift")
 
-    # ✅ auto end shift if expired
     auto_end_shift_if_required(db, shift, now)
-
     return shift

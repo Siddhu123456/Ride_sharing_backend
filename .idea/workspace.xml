@@ -2,17 +2,17 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="cd6b7db1-caaa-4db2-b81a-aca1a025762f" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/.env" beforeDir="false" afterPath="$PROJECT_DIR$/.env" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/models/driver_vehicle_assignment.py" beforeDir="false" afterPath="$PROJECT_DIR$/app/models/driver_vehicle_assignment.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/models/trip.py" beforeDir="false" afterPath="$PROJECT_DIR$/app/models/trip.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/routes/trip_lifecycle_routes.py" beforeDir="false" afterPath="$PROJECT_DIR$/app/routes/trip_lifecycle_routes.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/models/driver_shift.py" beforeDir="false" afterPath="$PROJECT_DIR$/app/models/driver_shift.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/routes/driver_shift_location.py" beforeDir="false" afterPath="$PROJECT_DIR$/app/routes/driver_shift_location.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/routes/fleet_owner_vehicle_assignment.py" beforeDir="false" afterPath="$PROJECT_DIR$/app/routes/fleet_owner_vehicle_assignment.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/app/routes/trip_routes.py" beforeDir="false" afterPath="$PROJECT_DIR$/app/routes/trip_routes.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/schemas/driver_shift.py" beforeDir="false" afterPath="$PROJECT_DIR$/app/schemas/driver_shift.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/schemas/enums.py" beforeDir="false" afterPath="$PROJECT_DIR$/app/schemas/enums.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/schemas/fleet_overview.py" beforeDir="false" afterPath="$PROJECT_DIR$/app/schemas/fleet_overview.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/app/schemas/fleet_vehicle_assignment.py" beforeDir="false" afterPath="$PROJECT_DIR$/app/schemas/fleet_vehicle_assignment.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/app/schemas/trip.py" beforeDir="false" afterPath="$PROJECT_DIR$/app/schemas/trip.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/services/fare_service.py" beforeDir="false" afterPath="$PROJECT_DIR$/app/services/fare_service.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/services/trip_lifecycle_service.py" beforeDir="false" afterPath="$PROJECT_DIR$/app/services/trip_lifecycle_service.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/requirements.txt" beforeDir="false" afterPath="$PROJECT_DIR$/requirements.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/services/dispatch_service.py" beforeDir="false" afterPath="$PROJECT_DIR$/app/services/dispatch_service.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -89,11 +89,22 @@
       <option name="presentableId" value="Default" />
       <updated>1769146020203</updated>
       <workItem from="1769146021855" duration="9754000" />
-      <workItem from="1769490490226" duration="14771000" />
+      <workItem from="1769490490226" duration="15436000" />
+      <workItem from="1769579745131" duration="16145000" />
     </task>
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
     <option name="version" value="3" />
+  </component>
+  <component name="XDebuggerManager">
+    <breakpoint-manager>
+      <breakpoints>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/app/routes/fleet_overview_routes.py</url>
+          <option name="timeStamp" value="1" />
+        </line-breakpoint>
+      </breakpoints>
+    </breakpoint-manager>
   </component>
 </project>

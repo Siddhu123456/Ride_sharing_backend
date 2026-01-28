@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, time
 from typing import Optional
 from pydantic import BaseModel
 
@@ -30,8 +30,8 @@ class VehicleDriverAssignmentResponse(BaseModel):
     assignment_id: int
     driver_id: int
     vehicle_id: int
-    start_time: datetime
-    end_time: Optional[datetime]
+    start_time: time
+    end_time: time
 
     created_by: Optional[int]
 

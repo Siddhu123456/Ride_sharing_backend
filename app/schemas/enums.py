@@ -87,3 +87,10 @@ class PaymentStatusEnum(str, Enum):
     SUCCESS = "SUCCESS"
     FAILED = "FAILED"
     REFUNDED = "REFUNDED"
+
+
+
+class DriverShiftStatusEnum(str, Enum):
+    ONLINE = "ONLINE"
+    OFFLINE = "OFFLINE"
+    ON_TRIP = "ON_TRIP"

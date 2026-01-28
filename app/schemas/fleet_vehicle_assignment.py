@@ -6,8 +6,8 @@ from pydantic import BaseModel
 class FleetAssignDriverToVehicleRequest(BaseModel):
     driver_id: int
     vehicle_id: int
-    start_time: datetime
-    end_time: Optional[datetime] = None  # None = ongoing assignment
+    start_time: time
+    end_time: time
 
 
 class FleetAssignDriverToVehicleResponse(BaseModel):

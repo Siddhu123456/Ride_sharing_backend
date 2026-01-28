@@ -2,6 +2,8 @@ from pydantic import BaseModel
 from typing import Optional
 from datetime import datetime
 
+from app.schemas.enums import DriverShiftStatusEnum
+
 
 class StartDriverShiftRequest(BaseModel):
     driver_id: int
@@ -20,10 +22,9 @@ class DriverShiftResponse(BaseModel):
     tenant_id: int
     vehicle_id: Optional[int]
 
-    status: str
+    status: DriverShiftStatusEnum   # 🔥 changed
     started_at: datetime
     ended_at: Optional[datetime]
-
     expected_end_at: Optional[datetime]
 
     last_latitude: Optional[float]
@@ -31,3 +32,4 @@ class DriverShiftResponse(BaseModel):
 
     class Config:
         from_attributes = True
+

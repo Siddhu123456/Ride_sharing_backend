@@ -7,11 +7,11 @@ class TripRequestCreate(BaseModel):
     tenant_id: int
     pickup_lat: float
     pickup_lng: float
-    pickup_address: Optional[str]
+    pickup_address: Optional[str] = None
 
     drop_lat: float
     drop_lng: float
-    drop_address: Optional[str]
+    drop_address: Optional[str] = None
 
     vehicle_category: VehicleCategoryEnum
 
