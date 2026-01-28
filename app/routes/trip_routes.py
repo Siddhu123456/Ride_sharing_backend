@@ -102,3 +102,4 @@ def request_trip(
     db.commit()
 
     return trip
+
