@@ -26,8 +26,20 @@ def pending_offers(
     db: Session = Depends(get_db),
     session: UserSession = Depends(require_role(TenantRoleEnum.DRIVER))
 ):
-    offers = db.execute(
-        select(DispatchAttempt)
+    rows = db.execute(
+        select(
+            DispatchAttempt.attempt_id,
+            DispatchAttempt.sent_at,
+
+            Trip.trip_id,
+            Trip.pickup_lat,
+            Trip.pickup_lng,
+            Trip.pickup_address,
+            Trip.drop_lat,
+            Trip.drop_lng,
+            Trip.drop_address,
+            Trip.fare_amount
+        )
         .join(Trip, Trip.trip_id == DispatchAttempt.trip_id)
         .where(
             and_(
@@ -36,9 +48,28 @@ def pending_offers(
                 Trip.status == TripStatusEnum.REQUESTED
             )
         )
-    ).scalars().all()
+        .order_by(DispatchAttempt.sent_at.asc())
+    ).all()
 
-    return offers
+    return [
+        DriverOfferResponse(
+            attempt_id=row.attempt_id,
+            trip_id=row.trip_id,
+
+            pickup_lat=row.pickup_lat,
+            pickup_lng=row.pickup_lng,
+            pickup_address=row.pickup_address,
+
+            drop_lat=row.drop_lat,
+            drop_lng=row.drop_lng,
+            drop_address=row.drop_address,
+
+            fare_amount=row.fare_amount,
+            sent_at=row.sent_at
+        )
+        for row in rows
+    ]
+
 
 
 # =========================================================
@@ -82,12 +113,24 @@ def respond_offer(
         attempt.response = "ACCEPTED"
 
         try:
-            assign_trip(db, trip, driver_id=session.user_id, updated_by=session.user_id)
+            assign_trip(
+                db,
+                trip,
+                driver_id=session.user_id,
+                updated_by=session.user_id
+            )
         except ValueError as e:
             raise HTTPException(status_code=400, detail=str(e))
 
         db.commit()
-        return {"message": "Offer accepted. Trip assigned successfully."}
+        db.refresh(trip)  # 🔥 IMPORTANT
+
+        return {
+            "trip": {
+                "trip_id": trip.trip_id,
+                "status": trip.status.value
+            }
+        }
 
     # ✅ REJECT
     attempt.response = "REJECTED"
@@ -99,3 +142,4 @@ def respond_offer(
         return {"message": "Offer rejected. Next driver notified."}
 
     return {"message": "Offer rejected. No other drivers available."}
+

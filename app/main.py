@@ -24,6 +24,7 @@ from app.routes.driver_shift_location import router as driver_shift_location_rou
 
 from app.routes.tenant_admin_tenant_setup_routes import router as tenant_admin_setup_router
 
+from app.routes.trip_fare_routes import router as trip_fare_router
 from app.routes.trip_routes import router as trip_router
 from app.routes.driver_offer_routes import router as driver_offer_router
 from app.routes.otp_routes import router as otp_router
@@ -68,6 +69,7 @@ app.include_router(fleet_owner_vehicle_router)
 app.include_router(tenant_admin_vehicle_router)
 app.include_router(fleet_owner_vehicle_assignment_router)
 app.include_router(driver_shift_location_router)
+app.include_router(trip_fare_router)
 app.include_router(trip_router)
 app.include_router(driver_offer_router)
 app.include_router(trip_router)

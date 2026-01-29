@@ -77,4 +77,11 @@ def verify_and_start_trip(
     trip.updated_on = datetime.now(timezone.utc)
 
     db.commit()
-    return {"message": "OTP verified. Trip started (PICKED_UP)."}
+    db.refresh(trip)  # 🔥 important
+
+    # ✅ MATCH FRONTEND EXPECTATION
+    return {
+        "trip_id": trip.trip_id,
+        "status": trip.status.value
+    }
+

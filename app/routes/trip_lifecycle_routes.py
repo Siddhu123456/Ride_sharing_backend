@@ -15,7 +15,7 @@ from app.schemas.trip_lifecycle import (
     TripCompleteRequest,
     TripStatusResponse
 )
-from app.services.trip_lifecycle_service import cancel_trip
+from app.services.trip_lifecycle_service import cancel_trip, set_driver_shift_online
 from app.services.payment_service import create_payment_for_trip
 
 router = APIRouter(prefix="/trips", tags=["Trips - Lifecycle"])
@@ -89,6 +89,7 @@ def complete_trip(
     trip.status = TripStatusEnum.COMPLETED
     trip.completed_at = datetime.now(timezone.utc)
 
+    set_driver_shift_online(db,session.user_id)
     # ✅ Payment uses stored fare_amount
     create_payment_for_trip(db, trip)
 

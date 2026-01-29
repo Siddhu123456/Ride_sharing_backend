@@ -80,7 +80,7 @@ def create_first_offer(
         driver_id=driver_ids[0],
         created_by=created_by
     )
-
+    print('added attempt')
     db.add(attempt)
     db.flush()
     return attempt

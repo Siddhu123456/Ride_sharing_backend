@@ -54,7 +54,6 @@ class Trip(Base):
     cancelled_at = Column(TIMESTAMP(timezone=True))
 
     fare_amount = Column(Numeric(10, 2))
-    driver_earning = Column(Numeric(10, 2))
     platform_fee = Column(Numeric(10, 2))
 
     payment_status = Column(

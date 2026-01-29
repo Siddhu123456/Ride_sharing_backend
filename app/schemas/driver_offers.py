@@ -6,11 +6,20 @@ from datetime import datetime
 class DriverOfferResponse(BaseModel):
     attempt_id: int
     trip_id: int
-    driver_id: int
 
+    # 🚕 Trip info
+    pickup_lat: float
+    pickup_lng: float
+    pickup_address: Optional[str]
+
+    drop_lat: float
+    drop_lng: float
+    drop_address: Optional[str]
+
+    fare_amount: Optional[float]
+
+    # ⏱ Offer info
     sent_at: datetime
-    responded_at: Optional[datetime]
-    response: Optional[str]
 
     class Config:
         from_attributes = True
