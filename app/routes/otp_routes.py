@@ -6,6 +6,7 @@ from datetime import datetime, timezone
 
 from app.core.database import get_db
 from app.core.role_guard import require_role
+from app.models.trip_otp import TripOtp
 from app.schemas.enums import TenantRoleEnum, TripStatusEnum
 
 from app.models.user_session import UserSession
@@ -36,7 +37,7 @@ def generate_trip_otp(
     if trip.status != TripStatusEnum.ASSIGNED:
         raise HTTPException(status_code=400, detail="OTP can be generated only after ASSIGNED")
 
-    otp = create_trip_otp(db, trip_id, ttl_minutes=5)
+    otp = create_trip_otp(db, trip_id, ttl_minutes=30)
     db.commit()
 
     return GenerateOtpResponse(
@@ -44,6 +45,23 @@ def generate_trip_otp(
         otp_code=otp.otp_code,
         expires_at=otp.expires_at
     )
+
+
+@router.get("/{trip_id}/otp")
+def get_trip_otp(
+    trip_id: int,
+    db: Session = Depends(get_db),
+    session: UserSession = Depends(require_role(TenantRoleEnum.RIDER))
+):
+    otp = db.execute(
+        select(TripOtp).where(TripOtp.trip_id == trip_id)
+    ).scalar_one_or_none()
+
+    if not otp or otp.expires_at < now():
+        return {"otp": None}
+
+    return {"otp": otp.otp_code}
+
 
 
 # ✅ Driver verifies OTP and starts trip => status becomes PICKED_UP

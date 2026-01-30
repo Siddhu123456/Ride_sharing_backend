@@ -3,17 +3,21 @@ from app.schemas.enums import VehicleCategoryEnum
 from typing import Optional, List
 
 
+
 class TripRequestCreate(BaseModel):
     tenant_id: int
+    city_id: int
+
     pickup_lat: float
     pickup_lng: float
-    pickup_address: Optional[str] = None
+    pickup_address: str
 
     drop_lat: float
     drop_lng: float
-    drop_address: Optional[str] = None
+    drop_address: str
 
     vehicle_category: VehicleCategoryEnum
+    fare_amount: float
 
 
 class TripResponse(BaseModel):
