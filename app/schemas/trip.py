@@ -31,8 +31,10 @@ class TripResponse(BaseModel):
 class TripFareEstimateRequest(BaseModel):
     pickup_lat: float
     pickup_lng: float
+    pickup_address: str
     drop_lat: float
     drop_lng: float
+    drop_address: str
     vehicle_category: VehicleCategoryEnum
 
 

@@ -29,9 +29,6 @@ def get_fare_estimates(
     if not city_id:
         raise HTTPException(400, "Pickup outside service area")
 
-    # 2️⃣ Reverse geocode
-    pickup_address = reverse_geocode(payload.pickup_lat, payload.pickup_lng)
-    drop_address = reverse_geocode(payload.drop_lat, payload.drop_lng)
 
     # 3️⃣ Distance
     distance_km = calculate_distance_km(
@@ -71,8 +68,8 @@ def get_fare_estimates(
 
     return {
         "city_id": city_id,
-        "pickup_address": pickup_address,
-        "drop_address": drop_address,
+        "pickup_address": payload.pickup_address,
+        "drop_address": payload.drop_address,
         "distance_km": distance_km,
         "vehicle_category": payload.vehicle_category,
         "estimates": estimates

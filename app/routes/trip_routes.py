@@ -10,10 +10,6 @@ from app.models.trip import Trip
 from app.models.user_session import UserSession
 
 from app.schemas.trip import TripRequestCreate, TripResponse
-from app.services.distance_service import calculate_distance_km
-from app.services.fare_service import calculate_fare
-from app.services.location_service import detect_city_by_location
-from app.services.geo_coding_service import reverse_geocode
 from app.services.tenant_city_service import tenant_operates_in_city
 from app.services.dispatch_service import create_first_offer
 
