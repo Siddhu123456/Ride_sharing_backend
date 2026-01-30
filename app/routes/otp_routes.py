@@ -57,7 +57,9 @@ def get_trip_otp(
         select(TripOtp).where(TripOtp.trip_id == trip_id)
     ).scalar_one_or_none()
 
-    if not otp or otp.expires_at < now():
+    current_time = datetime.now(timezone.utc)
+
+    if not otp or otp.expires_at < current_time:
         return {"otp": None}
 
     return {"otp": otp.otp_code}
