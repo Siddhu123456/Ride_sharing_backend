@@ -1,5 +1,5 @@
 from typing import List, Optional
-from fastapi import APIRouter, Depends, HTTPException, Form, UploadFile, File
+from fastapi import APIRouter, Depends, HTTPException, Form, UploadFile, File, Query
 from sqlalchemy.orm import Session
 from sqlalchemy import select, and_
 from starlette import status
@@ -51,27 +51,30 @@ def get_my_fleet(
 # ✅ LIST TENANTS (Filtered by User's Country)
 @router.get("/tenants", response_model=List[TenantResponse])
 def list_tenants_for_user(
+    user_id: int = Query(..., description="User ID"),
     db: Session = Depends(get_db),
-    session: UserSession = Depends(get_current_user_session)
 ):
-    # 1. Get User's Country
+    # 1️⃣ Fetch user
     user = db.execute(
-        select(AppUser).where(AppUser.user_id == session.user_id)
+        select(AppUser).where(AppUser.user_id == user_id)
     ).scalar_one_or_none()
-    
-    if not user or not user.country_code:
+
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    if not user.country_code:
         raise HTTPException(status_code=400, detail="User country not defined")
 
-    # 2. Find Tenants operating in that country
-    # Join Tenant -> TenantCountry where country_code matches user
+    # 2️⃣ Fetch tenants operating in user's country
     stmt = (
         select(Tenant)
         .join(TenantCountry, Tenant.tenant_id == TenantCountry.tenant_id)
         .where(TenantCountry.country_code == user.country_code)
     )
-    
+
     tenants = db.execute(stmt).scalars().all()
     return tenants
+
 
 
 

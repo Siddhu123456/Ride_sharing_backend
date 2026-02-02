@@ -1,10 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ChangeListManager">
-    <list default="true" id="cd6b7db1-caaa-4db2-b81a-aca1a025762f" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/routes/otp_routes.py" beforeDir="false" afterPath="$PROJECT_DIR$/app/routes/otp_routes.py" afterDir="false" />
-    </list>
+    <list default="true" id="cd6b7db1-caaa-4db2-b81a-aca1a025762f" name="Changes" comment="" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -83,7 +80,7 @@
       <workItem from="1769490490226" duration="15436000" />
       <workItem from="1769579745131" duration="16145000" />
       <workItem from="1769661250775" duration="17723000" />
-      <workItem from="1769747969997" duration="8236000" />
+      <workItem from="1769747969997" duration="8869000" />
     </task>
     <servers />
   </component>

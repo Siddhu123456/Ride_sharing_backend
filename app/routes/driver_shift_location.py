@@ -23,6 +23,11 @@ from app.schemas.driver_location import (
 )
 from app.schemas.enums import DriverShiftStatusEnum
 
+from app.core.role_guard import require_role
+from app.schemas.enums import TenantRoleEnum
+from app.models.user_session import UserSession
+
+
 router = APIRouter(prefix="/drivers", tags=["Driver Shift & Location"])
 
 
@@ -96,11 +101,15 @@ def auto_end_shift_if_required(
 )
 def start_driver_shift(
     payload: StartDriverShiftRequest,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    session: UserSession = Depends(require_role(TenantRoleEnum.DRIVER))
 ):
-    # Validate driver
+    # 🔐 enforce ownership
+    if payload.driver_id != session.user_id:
+        raise HTTPException(status_code=403, detail="Unauthorized driver")
+
     driver = db.execute(
-        select(AppUser).where(AppUser.user_id == payload.driver_id)
+        select(AppUser).where(AppUser.user_id == session.user_id)
     ).scalar_one_or_none()
 
     if not driver:
@@ -205,14 +214,18 @@ def start_driver_shift(
 )
 def update_driver_location(
     payload: UpdateDriverLocationRequest,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    session: UserSession = Depends(require_role(TenantRoleEnum.DRIVER))
 ):
+    if payload.driver_id != session.user_id:
+        raise HTTPException(status_code=403, detail="Unauthorized driver")
+
     now = datetime.now(timezone.utc)
 
     shift = db.execute(
         select(DriverShift).where(
             and_(
-                DriverShift.driver_id == payload.driver_id,
+                DriverShift.driver_id == session.user_id,
                 DriverShift.status == DriverShiftStatusEnum.ONLINE,
                 DriverShift.ended_at.is_(None)
             )
@@ -276,14 +289,18 @@ def update_driver_location(
 )
 def end_driver_shift(
     payload: EndDriverShiftRequest,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    session: UserSession = Depends(require_role(TenantRoleEnum.DRIVER))
 ):
+    if payload.driver_id != session.user_id:
+        raise HTTPException(status_code=403, detail="Unauthorized driver")
+
     now = datetime.now(timezone.utc)
 
     shift = db.execute(
         select(DriverShift).where(
             and_(
-                DriverShift.driver_id == payload.driver_id,
+                DriverShift.driver_id == session.user_id,
                 DriverShift.status == DriverShiftStatusEnum.ONLINE,
                 DriverShift.ended_at.is_(None)
             )
@@ -307,19 +324,19 @@ def end_driver_shift(
 # ✅ 4) Get Current Shift
 # =========================================================
 @router.get(
-    "/{driver_id}/shift/current",
+    "/shift/current",
     response_model=DriverShiftResponse
 )
 def get_current_driver_shift(
-    driver_id: int,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    session: UserSession = Depends(require_role(TenantRoleEnum.DRIVER))
 ):
     now = datetime.now(timezone.utc)
 
     shift = db.execute(
         select(DriverShift).where(
             and_(
-                DriverShift.driver_id == driver_id,
+                DriverShift.driver_id == session.user_id,
                 DriverShift.ended_at.is_(None)
             )
         ).order_by(DriverShift.started_at.desc())
@@ -330,3 +347,4 @@ def get_current_driver_shift(
 
     auto_end_shift_if_required(db, shift, now)
     return shift
+
