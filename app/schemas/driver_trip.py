@@ -1,5 +1,6 @@
+from datetime import datetime
 from pydantic import BaseModel
-from typing import Optional
+from typing import List, Optional
 from app.schemas.enums import TripStatusEnum
 
 
@@ -16,3 +17,20 @@ class ActiveTripResponse(BaseModel):
 
     class Config:
         from_attributes = True
+
+
+class DriverTripItem(BaseModel):
+    trip_id: int
+    tenant_name: str
+    pickup_address: str
+    drop_address: str
+    fare_amount: float
+    status: TripStatusEnum
+    completed_at: Optional[datetime]
+
+
+class DriverTripListResponse(BaseModel):
+    page: int
+    limit: int
+    total: int
+    trips: List[DriverTripItem]

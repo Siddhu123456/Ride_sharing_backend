@@ -34,6 +34,7 @@ from app.routes.driver_profile_routes import router as driver_profile_router
 from app.routes.driver_vehicle_routes import router as driver_vehicle_router
 from app.routes.driver_trip_routes import router as driver_trip_router
 from app.routes.trip_navigation_routes import router as trip_navigation_router
+from app.routes.driver_dashboard_routes import router as driver_dashboard_router
 
 from fastapi.staticfiles import StaticFiles
 
@@ -87,7 +88,7 @@ app.include_router(driver_vehicle_router)          # ✅ NEW
 app.include_router(driver_shift_location_router)
 app.include_router(driver_offer_router)
 app.include_router(driver_trip_router)              # ✅ NEW
-
+app.include_router(driver_dashboard_router)          # ✅ NEW
 # =========================
 # TRIPS
 # =========================
