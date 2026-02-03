@@ -1,7 +1,18 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ChangeListManager">
-    <list default="true" id="cd6b7db1-caaa-4db2-b81a-aca1a025762f" name="Changes" comment="" />
+    <list default="true" id="cd6b7db1-caaa-4db2-b81a-aca1a025762f" name="Changes" comment="">
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/routes/driver_dashboard_routes.py" beforeDir="false" afterPath="$PROJECT_DIR$/app/routes/driver_dashboard_routes.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/routes/driver_docs.py" beforeDir="false" afterPath="$PROJECT_DIR$/app/routes/driver_docs.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/routes/driver_offer_routes.py" beforeDir="false" afterPath="$PROJECT_DIR$/app/routes/driver_offer_routes.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/routes/driver_profile_routes.py" beforeDir="false" afterPath="$PROJECT_DIR$/app/routes/driver_profile_routes.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/routes/driver_vehicle_routes.py" beforeDir="false" afterPath="$PROJECT_DIR$/app/routes/driver_vehicle_routes.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/schemas/driver_dashboard.py" beforeDir="false" afterPath="$PROJECT_DIR$/app/schemas/driver_dashboard.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/schemas/driver_offers.py" beforeDir="false" afterPath="$PROJECT_DIR$/app/schemas/driver_offers.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/schemas/driver_profile.py" beforeDir="false" afterPath="$PROJECT_DIR$/app/schemas/driver_profile.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/schemas/driver_vehicle.py" beforeDir="false" afterPath="$PROJECT_DIR$/app/schemas/driver_vehicle.py" afterDir="false" />
+    </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -44,6 +55,11 @@
     &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
   }
 }</component>
+  <component name="RecentsManager">
+    <key name="MoveFile.RECENT_KEYS">
+      <recent name="$PROJECT_DIR$/app/routes" />
+    </key>
+  </component>
   <component name="RunManager">
     <configuration name="Ride_sharing_backend" type="Python.FastAPI">
       <module name="Ride_sharing_backend" />
@@ -81,6 +97,8 @@
       <workItem from="1769579745131" duration="16145000" />
       <workItem from="1769661250775" duration="17723000" />
       <workItem from="1769747969997" duration="8869000" />
+      <workItem from="1770016225344" duration="12132000" />
+      <workItem from="1770094118484" duration="19174000" />
     </task>
     <servers />
   </component>

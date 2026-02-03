@@ -3,22 +3,22 @@ from typing import Optional
 from datetime import datetime
 
 
+
 class DriverOfferResponse(BaseModel):
     attempt_id: int
     trip_id: int
 
-    # 🚕 Trip info
     pickup_lat: float
     pickup_lng: float
-    pickup_address: Optional[str]
+    pickup_address: str
 
     drop_lat: float
     drop_lng: float
-    drop_address: Optional[str]
+    drop_address: str
 
-    fare_amount: Optional[float]
+    distance_km: float   # ✅ NEW
+    fare_amount: float
 
-    # ⏱ Offer info
     sent_at: datetime
 
     class Config:

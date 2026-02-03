@@ -1,17 +1,18 @@
 from pydantic import BaseModel
 from datetime import time
-from app.schemas.enums import VehicleCategoryEnum
 from typing import Optional
+from app.schemas.enums import VehicleCategoryEnum
 
 
 class DriverVehicleAssignmentResponse(BaseModel):
     vehicle_id: int
-    vehicle_number: str
-    category: str
 
-    brand: Optional[str]
-    model: Optional[str]
-    color: Optional[str]
+    registration_no: str
+    category: VehicleCategoryEnum
+
+    make: Optional[str] = None
+    model: Optional[str] = None
+    year_of_manufacture: Optional[int] = None
 
     start_time: time
     end_time: Optional[time]

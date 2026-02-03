@@ -17,21 +17,23 @@ def get_driver_profile(
     db: Session = Depends(get_db),
     session: UserSession = Depends(get_current_user_session)
 ):
-    driver = db.execute(
+    result = db.execute(
         select(AppUser, DriverProfile)
         .join(DriverProfile, DriverProfile.driver_id == AppUser.user_id)
         .where(AppUser.user_id == session.user_id)
     ).first()
 
-    if not driver:
-        raise HTTPException(404, "Driver profile not found")
+    if not result:
+        raise HTTPException(status_code=404, detail="Driver profile not found")
 
-    user, profile = driver
+    user, profile = result
 
     return {
         "driver_id": user.user_id,
         "full_name": user.full_name,
         "phone": user.phone,
-        "rating": profile.rating,
+        "driver_type": profile.driver_type,      # ✅ now expected
+        "rating": float(profile.rating),          # ✅ Numeric → float
         "approval_status": profile.approval_status
     }
+

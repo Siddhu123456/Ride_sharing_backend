@@ -12,6 +12,8 @@ from app.models.user_session import UserSession
 from app.models.trip import Trip
 from app.models.dispatch_attempt import DispatchAttempt
 
+from app.services.distance_service import calculate_distance_km
+
 from app.schemas.driver_offers import DriverOfferResponse, DriverOfferRespondRequest
 from app.services.dispatch_service import send_next_offer, assign_trip
 
@@ -51,24 +53,38 @@ def pending_offers(
         .order_by(DispatchAttempt.sent_at.asc())
     ).all()
 
-    return [
-        DriverOfferResponse(
-            attempt_id=row.attempt_id,
-            trip_id=row.trip_id,
+    offers = []
 
-            pickup_lat=row.pickup_lat,
-            pickup_lng=row.pickup_lng,
-            pickup_address=row.pickup_address,
-
-            drop_lat=row.drop_lat,
-            drop_lng=row.drop_lng,
-            drop_address=row.drop_address,
-
-            fare_amount=row.fare_amount,
-            sent_at=row.sent_at
+    for row in rows:
+        distance_km = calculate_distance_km(
+            row.pickup_lat,
+            row.pickup_lng,
+            row.drop_lat,
+            row.drop_lng
         )
-        for row in rows
-    ]
+
+        offers.append(
+            DriverOfferResponse(
+                attempt_id=row.attempt_id,
+                trip_id=row.trip_id,
+
+                pickup_lat=row.pickup_lat,
+                pickup_lng=row.pickup_lng,
+                pickup_address=row.pickup_address,
+
+                drop_lat=row.drop_lat,
+                drop_lng=row.drop_lng,
+                drop_address=row.drop_address,
+
+                distance_km=round(distance_km, 2),  # ✅ NEW
+                fare_amount=row.fare_amount,
+
+                sent_at=row.sent_at
+            )
+        )
+
+    return offers
+
 
 
 

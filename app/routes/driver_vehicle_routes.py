@@ -45,25 +45,25 @@ def get_current_vehicle_assignment(
 
     assignment, vehicle = result
 
-    now = datetime.now(timezone.utc).time()
+    now_time = datetime.now(timezone.utc).time()
 
     # ✅ Check if assignment is currently active
     is_active = (
-        assignment.start_time <= now and
-        (assignment.end_time is None or now <= assignment.end_time)
+        assignment.start_time <= now_time and
+        (assignment.end_time is None or now_time <= assignment.end_time)
     )
 
-    return {
-        "vehicle_id": vehicle.vehicle_id,
-        "vehicle_number": vehicle.vehicle_number,
-        "category": vehicle.category,
+    return DriverVehicleAssignmentResponse(
+        vehicle_id=vehicle.vehicle_id,
+        registration_no=vehicle.registration_no,
+        category=vehicle.category,
 
-        "brand": vehicle.brand,
-        "model": vehicle.model,
-        "color": vehicle.color,
+        make=vehicle.make,
+        model=vehicle.model,
+        year_of_manufacture=vehicle.year_of_manufacture,
 
-        "start_time": assignment.start_time,
-        "end_time": assignment.end_time,
+        start_time=assignment.start_time,
+        end_time=assignment.end_time,
 
-        "is_active_assignment": is_active
-    }
+        is_active_assignment=is_active
+    )
