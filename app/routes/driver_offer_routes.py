@@ -124,7 +124,9 @@ def respond_offer(
     attempt.updated_by = session.user_id
     attempt.updated_on = now
 
+    # =====================================================
     # ✅ ACCEPT
+    # =====================================================
     if payload.accept:
         attempt.response = "ACCEPTED"
 
@@ -144,11 +146,23 @@ def respond_offer(
         return {
             "trip": {
                 "trip_id": trip.trip_id,
-                "status": trip.status.value
+                "status": trip.status.value,
+
+                "pickup_lat": trip.pickup_lat,
+                "pickup_lng": trip.pickup_lng,
+                "pickup_address": trip.pickup_address,
+
+                "drop_lat": trip.drop_lat,
+                "drop_lng": trip.drop_lng,
+                "drop_address": trip.drop_address,
+
+                "fare_amount": trip.fare_amount
             }
         }
 
-    # ✅ REJECT
+    # =====================================================
+    # ❌ REJECT
+    # =====================================================
     attempt.response = "REJECTED"
 
     next_offer = send_next_offer(db, trip, created_by=session.user_id)
@@ -158,4 +172,5 @@ def respond_offer(
         return {"message": "Offer rejected. Next driver notified."}
 
     return {"message": "Offer rejected. No other drivers available."}
+
 

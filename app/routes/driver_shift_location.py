@@ -6,6 +6,7 @@ from datetime import datetime, time, timezone, timedelta
 
 from app.core.database import get_db
 
+from app.models.trip import Trip
 from app.models.user import AppUser
 from app.models.driver_shift import DriverShift
 from app.models.driver_location import DriverLocation
@@ -21,7 +22,7 @@ from app.schemas.driver_location import (
     UpdateDriverLocationRequest,
     DriverLocationResponse
 )
-from app.schemas.enums import DriverShiftStatusEnum
+from app.schemas.enums import DriverShiftStatusEnum, TripStatusEnum
 
 from app.core.role_guard import require_role
 from app.schemas.enums import TenantRoleEnum
@@ -226,7 +227,7 @@ def update_driver_location(
         select(DriverShift).where(
             and_(
                 DriverShift.driver_id == session.user_id,
-                DriverShift.status == DriverShiftStatusEnum.ONLINE,
+                DriverShift.status != DriverShiftStatusEnum.OFFLINE,
                 DriverShift.ended_at.is_(None)
             )
         ).order_by(DriverShift.started_at.desc())
@@ -239,12 +240,19 @@ def update_driver_location(
         )
 
     # Auto end shift
-    if auto_end_shift_if_required(db, shift, now):
-        raise HTTPException(
-            status_code=400,
-            detail="Shift automatically ended"
+    active_trip = db.execute(
+        select(Trip).where(
+            and_(
+                Trip.driver_id == session.user_id,
+                Trip.status.in_([TripStatusEnum.ASSIGNED, TripStatusEnum.PICKED_UP])
+            )
         )
+    ).first()
 
+    # Only run auto-end logic if the driver is NOT on a trip
+    if not active_trip:
+        if auto_end_shift_if_required(db, shift, datetime.now(timezone.utc)):
+             raise HTTPException(status_code=400, detail="Shift automatically ended due to time limit")
     # Update location
     loc = db.execute(
         select(DriverLocation).where(
