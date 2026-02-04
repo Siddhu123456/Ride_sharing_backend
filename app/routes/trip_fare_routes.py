@@ -12,6 +12,10 @@ from app.services.geo_coding_service import reverse_geocode
 from app.services.distance_service import calculate_distance_km
 from app.services.fare_service import calculate_fare
 from app.services.tenant_city_service import get_tenants_operating_in_city
+from app.services.driver_availability_service import (
+    count_available_drivers_by_vehicle
+)
+
 
 router = APIRouter(prefix="/trips", tags=["Trips - Fare Discovery"])
 
@@ -29,8 +33,7 @@ def get_fare_estimates(
     if not city_id:
         raise HTTPException(400, "Pickup outside service area")
 
-
-    # 3️⃣ Distance
+    # 2️⃣ Distance
     distance_km = calculate_distance_km(
         payload.pickup_lat,
         payload.pickup_lng,
@@ -38,30 +41,46 @@ def get_fare_estimates(
         payload.drop_lng
     )
 
-    # 4️⃣ Tenants operating in city
+    # 3️⃣ Tenants operating in city
     tenants = get_tenants_operating_in_city(db, city_id)
 
     estimates = []
 
     for tenant in tenants:
-        try:
-            fare = calculate_fare(
-                db=db,
-                tenant_id=tenant.tenant_id,
-                city_id=city_id,
-                vehicle_category=payload.vehicle_category,
-                distance_km=distance_km
-            )
 
-            estimates.append({
-                "tenant_id": tenant.tenant_id,
-                "tenant_name": tenant.name,
-                "fare": fare["total_fare"],
-                "breakup": fare
-            })
-        except Exception:
-            # tenant doesn't support this vehicle type
-            continue
+        # 🔥 Get availability for ALL vehicle categories
+        availability_map = count_available_drivers_by_vehicle(
+            db=db,
+            city_id=city_id,
+            tenant_id=tenant.tenant_id,
+            pickup_lat=payload.pickup_lat,
+            pickup_lng=payload.pickup_lng
+        )
+
+        for vehicle_category, driver_count in availability_map.items():
+            try:
+                fare = calculate_fare(
+                    db=db,
+                    tenant_id=tenant.tenant_id,
+                    city_id=city_id,
+                    vehicle_category=vehicle_category,
+                    distance_km=distance_km
+                )
+
+                estimates.append({
+                    "tenant_id": tenant.tenant_id,
+                    "tenant_name": tenant.name,
+
+                    "vehicle_category": vehicle_category,
+                    "fare": fare["total_fare"],
+
+                    "available_drivers": driver_count,
+                    "breakup": fare
+                })
+
+            except Exception:
+                # fare config not available for this vehicle
+                continue
 
     if not estimates:
         raise HTTPException(404, "No available rides")
@@ -71,6 +90,6 @@ def get_fare_estimates(
         "pickup_address": payload.pickup_address,
         "drop_address": payload.drop_address,
         "distance_km": distance_km,
-        "vehicle_category": payload.vehicle_category,
         "estimates": estimates
     }
+

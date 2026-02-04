@@ -35,13 +35,14 @@ class TripFareEstimateRequest(BaseModel):
     drop_lat: float
     drop_lng: float
     drop_address: str
-    vehicle_category: VehicleCategoryEnum
 
 
 class TenantFareEstimate(BaseModel):
     tenant_id: int
     tenant_name: str
+    vehicle_category: VehicleCategoryEnum
     fare: float
+    available_drivers: int
     breakup: dict
 
 
@@ -50,5 +51,4 @@ class TripFareEstimateResponse(BaseModel):
     pickup_address: str | None
     drop_address: str | None
     distance_km: float
-    vehicle_category: VehicleCategoryEnum
     estimates: List[TenantFareEstimate]

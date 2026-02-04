@@ -3,15 +3,11 @@
   <component name="ChangeListManager">
     <list default="true" id="cd6b7db1-caaa-4db2-b81a-aca1a025762f" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/routes/driver_dashboard_routes.py" beforeDir="false" afterPath="$PROJECT_DIR$/app/routes/driver_dashboard_routes.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/routes/driver_docs.py" beforeDir="false" afterPath="$PROJECT_DIR$/app/routes/driver_docs.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/routes/driver_offer_routes.py" beforeDir="false" afterPath="$PROJECT_DIR$/app/routes/driver_offer_routes.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/routes/driver_profile_routes.py" beforeDir="false" afterPath="$PROJECT_DIR$/app/routes/driver_profile_routes.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/routes/driver_vehicle_routes.py" beforeDir="false" afterPath="$PROJECT_DIR$/app/routes/driver_vehicle_routes.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/schemas/driver_dashboard.py" beforeDir="false" afterPath="$PROJECT_DIR$/app/schemas/driver_dashboard.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/schemas/driver_offers.py" beforeDir="false" afterPath="$PROJECT_DIR$/app/schemas/driver_offers.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/schemas/driver_profile.py" beforeDir="false" afterPath="$PROJECT_DIR$/app/schemas/driver_profile.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/schemas/driver_vehicle.py" beforeDir="false" afterPath="$PROJECT_DIR$/app/schemas/driver_vehicle.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/app/main.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/routes/otp_routes.py" beforeDir="false" afterPath="$PROJECT_DIR$/app/routes/otp_routes.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/routes/trip_fare_routes.py" beforeDir="false" afterPath="$PROJECT_DIR$/app/routes/trip_fare_routes.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/schemas/otp.py" beforeDir="false" afterPath="$PROJECT_DIR$/app/schemas/otp.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/schemas/trip.py" beforeDir="false" afterPath="$PROJECT_DIR$/app/schemas/trip.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -80,7 +76,6 @@
   <component name="SharedIndexes">
     <attachedChunks>
       <set>
-        <option value="bundled-js-predefined-d6986cc7102b-9b0f141eb926-JavaScript-PY-253.29346.308" />
         <option value="bundled-python-sdk-ca5e2b39c7df-6e1f45a539f7-com.jetbrains.pycharm.pro.sharedIndexes.bundled-PY-253.29346.308" />
       </set>
     </attachedChunks>
@@ -99,6 +94,7 @@
       <workItem from="1769747969997" duration="8869000" />
       <workItem from="1770016225344" duration="12132000" />
       <workItem from="1770094118484" duration="19174000" />
+      <workItem from="1770181853099" duration="2000" />
     </task>
     <servers />
   </component>

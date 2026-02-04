@@ -36,6 +36,8 @@ from app.routes.driver_trip_routes import router as driver_trip_router
 from app.routes.trip_navigation_routes import router as trip_navigation_router
 from app.routes.driver_dashboard_routes import router as driver_dashboard_router
 
+from app.routes.rider_routes import router as rider_router
+
 from fastapi.staticfiles import StaticFiles
 
 
@@ -97,6 +99,9 @@ app.include_router(trip_router)
 app.include_router(trip_navigation_router)          # ✅ NEW
 app.include_router(otp_router)
 app.include_router(lifecycle_router)
+
+# rider
+app.include_router(rider_router)
 
 # =========================
 # STATIC FILES
