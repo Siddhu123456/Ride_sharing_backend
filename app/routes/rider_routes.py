@@ -1,15 +1,17 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
-from sqlalchemy import select, text
+from sqlalchemy import desc, select, text
 
 from app.core.database import get_db
 from app.core.role_guard import require_role
+from app.models.tenant import Tenant
+from app.models.trip import Trip
 from app.schemas.enums import TenantRoleEnum
 
 from app.models.user import AppUser
 from app.models.user_session import UserSession
 
-from app.schemas.rider import RiderProfileResponse
+from app.schemas.rider import RiderProfileResponse, RiderTripHistoryItem
 from app.schemas.rider import RiderCityResponse
 
 router = APIRouter(
@@ -87,3 +89,45 @@ def detect_rider_city(
         "city_name": city["name"],
         "country_code": city["country_code"]
     }
+
+
+@router.get("/trips/history", response_model=list[RiderTripHistoryItem])
+def get_rider_trip_history(
+    db: Session = Depends(get_db),
+    session: UserSession = Depends(require_role(TenantRoleEnum.RIDER))
+):
+    """
+    Fetch trip history for logged-in rider
+    """
+
+    trips = (
+        db.query(Trip, Tenant.name.label("tenant_name"))
+        .join(Tenant, Tenant.tenant_id == Trip.tenant_id)
+        .filter(Trip.rider_id == session.user_id)
+        .order_by(desc(Trip.created_at))
+        .all()
+    )
+
+    history = []
+
+    for trip, tenant_name in trips:
+        history.append(
+            RiderTripHistoryItem(
+                trip_id=trip.trip_id,
+                tenant_id=trip.tenant_id,
+                tenant_name=tenant_name,
+
+                pickup_address=trip.pickup_address,
+                drop_address=trip.drop_address,
+
+                vehicle_category=trip.vehicle_category,
+                fare_amount=trip.fare_amount,
+
+                status=trip.status,
+
+                created_at=trip.created_at,
+                completed_at=trip.completed_at,
+            )
+        )
+
+    return history
