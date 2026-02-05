@@ -16,20 +16,15 @@ from app.services.dispatch_service import create_first_offer
 router = APIRouter(prefix="/trips", tags=["Trips"])
 
 
-# =========================================================
-# ✅ Rider requests a trip
-# =========================================================
 @router.post("/request", response_model=TripResponse, status_code=201)
 def request_trip(
     payload: TripRequestCreate,
     db: Session = Depends(get_db),
     session: UserSession = Depends(require_role(TenantRoleEnum.RIDER))
 ):
-    # ✅ Validate tenant operates in city
     if not tenant_operates_in_city(db, payload.tenant_id, payload.city_id):
         raise HTTPException(403, "Tenant not operating in this city")
 
-    # ✅ Create trip (NO recalculation)
     trip = Trip(
         tenant_id=payload.tenant_id,
         rider_id=session.user_id,
@@ -53,7 +48,6 @@ def request_trip(
     db.commit()
     db.refresh(trip)
 
-    # ✅ Trigger dispatch
     create_first_offer(db, trip, session.user_id)
     db.commit()
 

@@ -40,3 +40,9 @@ class RiderTripHistoryItem(BaseModel):
 
     created_at: datetime
     completed_at: Optional[datetime] = None
+
+
+class RiderStatisticsResponse(BaseModel):
+    total_rides: int
+    total_spent: float
+    distance_traveled_km: float

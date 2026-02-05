@@ -1,17 +1,17 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
-from sqlalchemy import desc, select, text
+from sqlalchemy import desc, func, select, text
 
 from app.core.database import get_db
 from app.core.role_guard import require_role
 from app.models.tenant import Tenant
 from app.models.trip import Trip
-from app.schemas.enums import TenantRoleEnum
+from app.schemas.enums import TenantRoleEnum, TripStatusEnum
 
 from app.models.user import AppUser
 from app.models.user_session import UserSession
 
-from app.schemas.rider import RiderProfileResponse, RiderTripHistoryItem
+from app.schemas.rider import RiderProfileResponse, RiderStatisticsResponse, RiderTripHistoryItem
 from app.schemas.rider import RiderCityResponse
 
 router = APIRouter(
@@ -131,3 +131,36 @@ def get_rider_trip_history(
         )
 
     return history
+
+
+@router.get("/statistics", response_model=RiderStatisticsResponse)
+def get_rider_statistics(
+    db: Session = Depends(get_db),
+    session: UserSession = Depends(require_role(TenantRoleEnum.RIDER))
+):
+    """
+    Returns rider ride statistics (rating excluded for now)
+    """
+
+    result = db.execute(
+        select(
+            func.count(Trip.trip_id),
+            func.coalesce(func.sum(Trip.fare_amount), 0)
+        ).where(
+            Trip.rider_id == session.user_id,
+            Trip.status == TripStatusEnum.COMPLETED
+        )
+    ).one()
+
+    total_rides = result[0]
+    total_spent = float(result[1])
+
+    # Distance not implemented yet → keep future-ready
+    distance_traveled_km = 0.0
+
+    return RiderStatisticsResponse(
+        total_rides=total_rides,
+        total_spent=total_spent,
+        distance_traveled_km=distance_traveled_km
+    )
+
