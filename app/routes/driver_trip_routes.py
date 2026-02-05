@@ -96,3 +96,53 @@ def list_driver_trips(
         total=total,
         trips=trips
     )
+
+
+@router.get("/active")
+def get_active_trip_for_driver(
+    db: Session = Depends(get_db),
+    session: UserSession = Depends(require_role(TenantRoleEnum.DRIVER))
+):
+    active_statuses = [
+        TripStatusEnum.ASSIGNED,
+        TripStatusEnum.ARRIVED,
+        TripStatusEnum.PICKED_UP,
+        TripStatusEnum.IN_PROGRESS
+    ]
+
+    trip = db.execute(
+        select(Trip)
+        .where(
+            Trip.driver_id == session.user_id,
+            Trip.status.in_(active_statuses)
+        )
+        .order_by(Trip.assigned_at.desc())
+        .limit(1)
+    ).scalar_one_or_none()
+
+    if not trip:
+        return {"trip": None}
+
+    return {
+        "trip": {
+            "trip_id": trip.trip_id,
+            "status": trip.status.value,
+
+            "pickup_address": reverse_geocode(trip.pickup_lat, trip.pickup_lng),
+            "drop_address": reverse_geocode(trip.drop_lat, trip.drop_lng),
+
+            "pickup_lat": trip.pickup_lat,
+            "pickup_lng": trip.pickup_lng,
+            "drop_lat": trip.drop_lat,
+            "drop_lng": trip.drop_lng,
+
+            "vehicle_category": trip.vehicle_category,
+            "fare_amount": trip.fare_amount,
+
+            "rider_id": trip.rider_id,
+            "vehicle_id": trip.vehicle_id,
+
+            "assigned_at": trip.assigned_at,
+            "picked_up_at": trip.picked_up_at
+        }
+    }

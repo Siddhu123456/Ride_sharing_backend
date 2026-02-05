@@ -26,6 +26,7 @@ from app.routes.trip_routes import router as trip_router
 from app.routes.driver_offer_routes import router as driver_offer_router
 from app.routes.otp_routes import router as otp_router
 from app.routes.trip_lifecycle_routes import router as lifecycle_router
+from app.routes.rider_trip_routes import router as rider_trip_router
 
 from app.routes.fleet_overview_routes import router as fleet_overview_router
 
@@ -102,6 +103,7 @@ app.include_router(lifecycle_router)
 
 # rider
 app.include_router(rider_router)
+app.include_router(rider_trip_router)
 
 # =========================
 # STATIC FILES
