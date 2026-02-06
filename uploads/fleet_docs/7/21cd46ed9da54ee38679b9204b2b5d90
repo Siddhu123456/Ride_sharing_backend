@@ -1,0 +1,1010 @@
+
+
+CREATE TYPE delivery_status_enum AS ENUM (
+    'awaiting_pickup', 'in_transit', 'out_for_delivery',
+    'delivered', 'returned', 'cancelled'
+);
+
+CREATE TYPE order_status_enum AS ENUM (
+    'created', 'confirmed', 'packed', 'shipped',
+    'delivered', 'cancelled', 'returned'
+);
+
+CREATE TYPE suborder_status_enum AS ENUM (
+    'created', 'confirmed', 'packed', 'shipped',
+    'delivered', 'cancelled', 'returned'
+);
+
+CREATE TYPE payment_type_enum AS ENUM (
+    'prepaid', 'cod', 'upi', 'wallet', 'netbanking'
+);
+
+CREATE TYPE payment_status_enum AS ENUM (
+    'pending', 'success', 'failed', 'refunded'
+);
+
+CREATE TYPE refund_status_enum AS ENUM (
+    'requested', 'approved', 'processed', 'rejected'
+);
+
+CREATE TYPE vendor_settlement_status_enum AS ENUM (
+    'pending', 'processing', 'completed', 'failed'
+);
+
+
+CREATE TYPE discount_type_enum AS ENUM ('percentage','fixed');
+
+CREATE TABLE users (
+    user_id SERIAL PRIMARY KEY,
+    user_name VARCHAR(100) NOT NULL,
+    user_email VARCHAR(100) UNIQUE NOT NULL,
+    user_phn_no VARCHAR(20),
+    password_hash TEXT NOT NULL,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE vendor (
+    vendor_id SERIAL PRIMARY KEY,
+    vendor_name VARCHAR(150) NOT NULL,
+    vendor_email VARCHAR(100) UNIQUE NOT NULL,
+    vendor_phn_no VARCHAR(20),
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE product_master (
+    product_master_id SERIAL PRIMARY KEY,
+    name VARCHAR(250) NOT NULL,
+    description TEXT,
+    category VARCHAR(150),
+    details JSONB,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE vendor_account_details (
+    account_id SERIAL PRIMARY KEY,
+    account_no VARCHAR(64),
+    ifsc_code VARCHAR(11),
+    bank_name VARCHAR(150)
+);
+
+ALTER TABLE vendor_account_details ALTER COLUMN ifsc_code TYPE VARCHAR(15);
+
+CREATE TABLE vendor_profile (
+    vendor_id INTEGER PRIMARY KEY REFERENCES vendor(vendor_id),
+    location VARCHAR(255),
+    account_id INTEGER UNIQUE REFERENCES vendor_account_details(account_id)
+);
+
+CREATE TABLE vendor_product (
+    vendor_product_id SERIAL PRIMARY KEY,
+    product_master_id INTEGER NOT NULL REFERENCES product_master(product_master_id) ON DELETE CASCADE,
+    vendor_id INTEGER NOT NULL REFERENCES vendor(vendor_id) ON DELETE CASCADE,
+    vendor_sku VARCHAR(100),
+    price NUMERIC(12,2) NOT NULL,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    CONSTRAINT vendor_product_unique UNIQUE(product_master_id, vendor_id)
+);
+
+
+CREATE TABLE vendor_product_price_history (
+    price_history_id SERIAL PRIMARY KEY,
+    vendor_product_id INTEGER NOT NULL REFERENCES vendor_product(vendor_product_id) ON DELETE CASCADE,
+    price NUMERIC(12,2) NOT NULL,
+    recorded_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE warehouse (
+    warehouse_id SERIAL PRIMARY KEY,
+    warehouse_name VARCHAR(200),
+    warehouse_address TEXT,
+    vendor_id INTEGER REFERENCES vendor(vendor_id) ON DELETE SET NULL
+);
+
+CREATE TABLE inventory (
+    vendor_product_id INTEGER NOT NULL REFERENCES vendor_product(vendor_product_id) ON DELETE CASCADE,
+    warehouse_id INTEGER NOT NULL REFERENCES warehouse(warehouse_id) ON DELETE CASCADE,
+    avl_quantity INTEGER DEFAULT 0,
+    reserved_quantity INTEGER DEFAULT 0,
+    last_updated TIMESTAMPTZ DEFAULT NOW(),
+    PRIMARY KEY (vendor_product_id, warehouse_id)
+);
+
+CREATE TABLE carts (
+    cart_id SERIAL PRIMARY KEY,
+    user_id INTEGER NOT NULL UNIQUE REFERENCES users(user_id) ON DELETE CASCADE,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE cart_items (
+    cart_item_id SERIAL PRIMARY KEY,
+    cart_id INTEGER NOT NULL REFERENCES carts(cart_id) ON DELETE CASCADE,
+    vendor_product_id INTEGER NOT NULL REFERENCES vendor_product(vendor_product_id),
+    units INTEGER NOT NULL,
+    unit_price NUMERIC(12,2) NOT NULL,
+    added_date TIMESTAMPTZ DEFAULT NOW(),
+    CONSTRAINT cart_items_unique UNIQUE(cart_id, vendor_product_id)
+);
+
+ALTER TABLE carts
+ADD COLUMN IF NOT EXISTS total_amount NUMERIC(14,2) DEFAULT 0;
+
+CREATE INDEX IF NOT EXISTS idx_carts_user_id ON carts(user_id);
+
+CREATE TABLE address (
+    address_id SERIAL PRIMARY KEY,
+    user_id INTEGER NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
+    type VARCHAR(50),
+    address_line VARCHAR(255),
+    city VARCHAR(100),
+    state VARCHAR(100),
+    pincode VARCHAR(20),
+    country VARCHAR(100) DEFAULT 'India'
+);
+
+CREATE TABLE user_profile (
+    user_id INTEGER PRIMARY KEY REFERENCES users(user_id),
+    profile_pic BYTEA,
+    default_address INTEGER REFERENCES address(address_id)
+);
+
+CREATE TABLE orders (
+    order_id SERIAL PRIMARY KEY,
+    user_id INTEGER NOT NULL REFERENCES users(user_id),
+    address_id INTEGER REFERENCES address(address_id),
+    ord_status order_status_enum DEFAULT 'created',
+    total_amount NUMERIC(14,2),
+    ord_date TIMESTAMPTZ DEFAULT NOW(),
+    payment_mode VARCHAR(50),
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE suborders (
+    suborder_id SERIAL PRIMARY KEY,
+    order_id INTEGER NOT NULL REFERENCES orders(order_id) ON DELETE CASCADE,
+    vendor_id INTEGER NOT NULL REFERENCES vendor(vendor_id),
+    warehouse_id INTEGER REFERENCES warehouse(warehouse_id),
+    suborder_total_amount NUMERIC(14,2),
+    ord_status suborder_status_enum DEFAULT 'created'
+);
+
+CREATE TABLE order_items (
+    order_item_id SERIAL PRIMARY KEY,
+    suborder_id INTEGER NOT NULL REFERENCES suborders(suborder_id) ON DELETE CASCADE,
+    vendor_product_id INTEGER NOT NULL REFERENCES vendor_product(vendor_product_id),
+    prod_snapshot_name VARCHAR(250),
+    item_price NUMERIC(12,2) NOT NULL,
+    units INTEGER NOT NULL
+);
+
+CREATE TABLE order_status_history (
+    history_id SERIAL PRIMARY KEY,
+    order_id INTEGER REFERENCES orders(order_id),
+    suborder_id INTEGER REFERENCES suborders(suborder_id),
+    status VARCHAR(50),
+    changed_by VARCHAR(100),
+    changed_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE delivery (
+    shipment_id SERIAL PRIMARY KEY,
+    suborder_id INTEGER NOT NULL REFERENCES suborders(suborder_id) ON DELETE CASCADE,
+    pickup_address VARCHAR(255),
+    delivery_address VARCHAR(255),
+    status delivery_status_enum DEFAULT 'awaiting_pickup',
+    courier_partner VARCHAR(150),
+    tracking_number VARCHAR(150),
+    expected_date DATE,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE payments (
+    payment_id SERIAL PRIMARY KEY,
+    order_id INTEGER NOT NULL REFERENCES orders(order_id),
+    user_id INTEGER NOT NULL REFERENCES users(user_id),
+    payment_type payment_type_enum,
+    transaction_id VARCHAR(150) UNIQUE,
+    payment_status payment_status_enum,
+    payment_date TIMESTAMPTZ DEFAULT NOW(),
+    amount NUMERIC(14,2)
+);
+
+CREATE TABLE refunds (
+    refund_id SERIAL PRIMARY KEY,
+    payment_id INTEGER REFERENCES payments(payment_id),
+    order_id INTEGER REFERENCES orders(order_id),
+    amount NUMERIC(12,2),
+    reason TEXT,
+    status refund_status_enum DEFAULT 'requested',
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE review (
+    review_id SERIAL PRIMARY KEY,
+    user_id INTEGER NOT NULL REFERENCES users(user_id),
+    vendor_product_id INTEGER REFERENCES vendor_product(vendor_product_id),
+    rating INTEGER,
+    review_text TEXT,
+    review_date TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE vendor_settlements (
+    settlement_id SERIAL PRIMARY KEY,
+    vendor_id INTEGER NOT NULL REFERENCES vendor(vendor_id),
+    settlement_period_start DATE,
+    settlement_period_end DATE,
+    amount NUMERIC(14,2),
+    fees NUMERIC(12,2),
+    status vendor_settlement_status_enum DEFAULT 'pending',
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE wishlist (
+    product_master_id INTEGER NOT NULL REFERENCES product_master(product_master_id),
+    user_id INTEGER NOT NULL REFERENCES users(user_id),
+    added_date TIMESTAMPTZ DEFAULT NOW(),
+    PRIMARY KEY(product_master_id, user_id)
+);
+
+CREATE TABLE coupons (
+    coupon_id SERIAL PRIMARY KEY,
+    code VARCHAR(64) UNIQUE NOT NULL,
+    discount_type discount_type_enum NOT NULL,
+    discount_value NUMERIC(12,4) NOT NULL,
+    min_order_amount NUMERIC(14,2) DEFAULT 0,
+    max_discount_amount NUMERIC(14,2),
+    starts_at TIMESTAMPTZ,
+    ends_at TIMESTAMPTZ,
+    total_uses_limit INTEGER,
+    per_user_limit INTEGER DEFAULT 1,
+    active BOOLEAN DEFAULT TRUE,
+    created_by INTEGER REFERENCES users(user_id),
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE coupon_products (
+    coupon_id INTEGER NOT NULL REFERENCES coupons(coupon_id) ON DELETE CASCADE,
+    product_master_id INTEGER NOT NULL REFERENCES product_master(product_master_id) ON DELETE CASCADE,
+    PRIMARY KEY (coupon_id, product_master_id)
+);
+
+CREATE TABLE coupon_redemptions (
+    redemption_id SERIAL PRIMARY KEY,
+    coupon_id INTEGER NOT NULL REFERENCES coupons(coupon_id) ON DELETE CASCADE,
+    user_id INTEGER NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
+    order_id INTEGER REFERENCES orders(order_id) ON DELETE SET NULL,
+    redeemed_at TIMESTAMPTZ DEFAULT NOW(),
+    discount_applied NUMERIC(14,2) NOT NULL
+);
+
+-- vendor_product lookups
+CREATE INDEX IF NOT EXISTS idx_vendor_product_product_master_id
+    ON vendor_product(product_master_id);
+CREATE INDEX IF NOT EXISTS idx_vendor_product_vendor_id
+    ON vendor_product(vendor_id);
+
+-- vendor_product_price_history
+CREATE INDEX IF NOT EXISTS idx_vpph_vendor_product_id
+    ON vendor_product_price_history(vendor_product_id);
+
+-- warehouse
+CREATE INDEX IF NOT EXISTS idx_warehouse_vendor_id
+    ON warehouse(vendor_id);
+
+-- inventory (FKs are part of PK, but index on vendor_product_id helps some queries)
+CREATE INDEX IF NOT EXISTS idx_inventory_vendor_product_id
+    ON inventory(vendor_product_id);
+
+-- carts & cart_items
+CREATE INDEX IF NOT EXISTS idx_carts_user_id
+    ON carts(user_id);
+CREATE INDEX IF NOT EXISTS idx_cart_items_cart_id
+    ON cart_items(cart_id);
+CREATE INDEX IF NOT EXISTS idx_cart_items_vendor_product_id
+    ON cart_items(vendor_product_id);
+
+-- address
+CREATE INDEX IF NOT EXISTS idx_address_user_id
+    ON address(user_id);
+
+-- orders & suborders & order_items
+CREATE INDEX IF NOT EXISTS idx_orders_user_id
+    ON orders(user_id);
+CREATE INDEX IF NOT EXISTS idx_orders_address_id
+    ON orders(address_id);
+CREATE INDEX IF NOT EXISTS idx_suborders_order_id
+    ON suborders(order_id);
+CREATE INDEX IF NOT EXISTS idx_suborders_vendor_id
+    ON suborders(vendor_id);
+CREATE INDEX IF NOT EXISTS idx_order_items_suborder_id
+    ON order_items(suborder_id);
+CREATE INDEX IF NOT EXISTS idx_order_items_vendor_product_id
+    ON order_items(vendor_product_id);
+
+-- order status history
+CREATE INDEX IF NOT EXISTS idx_order_status_history_order_id
+    ON order_status_history(order_id);
+CREATE INDEX IF NOT EXISTS idx_order_status_history_suborder_id
+    ON order_status_history(suborder_id);
+
+-- delivery
+CREATE INDEX IF NOT EXISTS idx_delivery_suborder_id
+    ON delivery(suborder_id);
+
+-- payments & refunds
+CREATE INDEX IF NOT EXISTS idx_payments_order_id
+    ON payments(order_id);
+CREATE INDEX IF NOT EXISTS idx_payments_user_id
+    ON payments(user_id);
+CREATE INDEX IF NOT EXISTS idx_refunds_payment_id
+    ON refunds(payment_id);
+CREATE INDEX IF NOT EXISTS idx_refunds_order_id
+    ON refunds(order_id);
+
+-- review
+CREATE INDEX IF NOT EXISTS idx_review_user_id
+    ON review(user_id);
+CREATE INDEX IF NOT EXISTS idx_review_vendor_product_id
+    ON review(vendor_product_id);
+
+-- vendor_settlements
+CREATE INDEX IF NOT EXISTS idx_vendor_settlements_vendor_id
+    ON vendor_settlements(vendor_id);
+
+-- wishlist
+CREATE INDEX IF NOT EXISTS idx_wishlist_user_id
+    ON wishlist(user_id);
+
+-- coupons & coupon_redemptions
+-- coupons.code is UNIQUE (already indexed by the unique constraint)
+CREATE INDEX IF NOT EXISTS idx_coupons_active_dates
+    ON coupons(active, starts_at, ends_at);
+CREATE INDEX IF NOT EXISTS idx_coupon_redemptions_coupon_id
+    ON coupon_redemptions(coupon_id);
+CREATE INDEX IF NOT EXISTS idx_coupon_redemptions_user_id
+    ON coupon_redemptions(user_id);
+CREATE INDEX IF NOT EXISTS idx_coupon_redemptions_coupon_user
+    ON coupon_redemptions(coupon_id, user_id);
+
+-- common created/modified date indexes (helpful for queries that list recent records)
+CREATE INDEX IF NOT EXISTS idx_orders_created_at
+    ON orders(created_at);
+CREATE INDEX IF NOT EXISTS idx_payments_payment_date
+    ON payments(payment_date);
+CREATE INDEX IF NOT EXISTS idx_vendor_product_created_at
+    ON vendor_product(created_at);
+
+
+BEGIN;
+
+-- 10 users
+INSERT INTO users (user_id, user_name, user_email, user_phn_no, password_hash, created_at) VALUES
+(1,'Asha Patel','asha.patel@example.com','9001000001','pwdhash1',now()),
+(2,'Rohit Sharma','rohit.sharma@example.com','9001000002','pwdhash2',now()),
+(3,'Maya Iyer','maya.iyer@example.com','9001000003','pwdhash3',now()),
+(4,'Karan Mehta','karan.mehta@example.com','9001000004','pwdhash4',now()),
+(5,'Sana Khan','sana.khan@example.com','9001000005','pwdhash5',now()),
+(6,'Vikram Rao','vikram.rao@example.com','9001000006','pwdhash6',now()),
+(7,'Neha Gupta','neha.gupta@example.com','9001000007','pwdhash7',now()),
+(8,'Adil Sheikh','adil.sheikh@example.com','9001000008','pwdhash8',now()),
+(9,'Priya Nair','priya.nair@example.com','9001000009','pwdhash9',now()),
+(10,'Arjun Das','arjun.das@example.com','9001000010','pwdhash10',now());
+
+-- 10 vendors
+INSERT INTO vendor (vendor_id, vendor_name, vendor_email, vendor_phn_no, created_at) VALUES
+(1,'Apple India Pvt Ltd','apple_india@example.com','8801000001',now()),
+(2,'Samsung Retail','samsung_retail@example.com','8801000002',now()),
+(3,'Nike Sports','nike_sports@example.com','8801000003',now()),
+(4,'Adidas Store','adidas_store@example.com','8801000004',now()),
+(5,'Sony Audio','sony_audio@example.com','8801000005',now()),
+(6,'Dell Computers','dell_computers@example.com','8801000006',now()),
+(7,'Woodland Co','woodland@example.com','8801000007',now()),
+(8,'Puma India','puma_india@example.com','8801000008',now()),
+(9,'Prestige Kitchen','prestige@example.com','8801000009',now()),
+(10,'Philips Home','philips_home@example.com','8801000010',now());
+
+-- 10 product_master (realistic)
+INSERT INTO product_master (product_master_id, name, description, category, details, created_at) VALUES
+(1, 'Apple iPhone 14', '128GB, A15 Bionic Chip, Super Retina XDR Display', 'electronics', '{"brand":"Apple","storage":"128GB","color":"Midnight"}'::jsonb, now()),
+(2, 'Samsung Galaxy S22', 'Dynamic AMOLED Display, Triple Camera System', 'electronics', '{"brand":"Samsung","storage":"256GB","color":"Phantom Black"}'::jsonb, now()),
+(3, 'Nike Air Max 270', 'Breathable mesh, Air cushioning for everyday comfort', 'footwear', '{"brand":"Nike","size_range":"8-12","color":"Black/White"}'::jsonb, now()),
+(4, 'Adidas Ultraboost 22', 'Responsive Boost midsole, Primeknit upper', 'footwear', '{"brand":"Adidas","size_range":"8-12","color":"Core Black"}'::jsonb, now()),
+(5, 'Sony WH-1000XM4 Headphones', 'Noise cancelling, 30-hour battery life', 'electronics', '{"brand":"Sony","type":"Over-Ear"}'::jsonb, now()),
+(6, 'Dell Inspiron 15 5000', '15.6-inch FHD, Intel i5, 8GB RAM, 512GB SSD', 'computers', '{"brand":"Dell","ram":"8GB","storage":"512GB SSD"}'::jsonb, now()),
+(7, 'Woodland Leather Wallet', 'Genuine leather, multiple compartments', 'accessories', '{"brand":"Woodland","material":"Leather","color":"Brown"}'::jsonb, now()),
+(8, 'Puma Men T-Shirt', 'Cotton, casual wear, regular fit', 'fashion', '{"brand":"Puma","size_range":"M-L","material":"Cotton"}'::jsonb, now()),
+(9, 'Prestige Non-Stick Frying Pan 26cm', 'Durable coating, gas & induction compatible', 'kitchen', '{"brand":"Prestige","diameter":"26cm"}'::jsonb, now()),
+(10, 'Philips LED Desk Lamp', 'Adjustable neck, eye-comfort technology', 'home_appliances', '{"brand":"Philips","wattage":"12W","color":"White"}'::jsonb, now());
+select * from product_master;
+-- 10 vendor_account_details
+INSERT INTO vendor_account_details (account_id, account_no, ifsc_code, bank_name) VALUES
+(1,'SBIN000000001','SBIN0000001','State Bank of India'),
+(2,'HDFC000000002','HDFC0000002','HDFC Bank'),
+(3,'ICIC000000003','ICIC0000003','ICICI Bank'),
+(4,'KARB000000004','KARB0000004','Karnataka Bank'),
+(5,'AXIS000000005','AXIS0000005','Axis Bank'),
+(6,'PNB000000006','PNB0000006','Punjab National Bank'),
+(7,'YESB000000007','YESB0000007','Yes Bank'),
+(8,'IDBI000000008','IDBI0000008','IDBI Bank'),
+(9,'BOB000000009','BOB0000009','Bank of Baroda'),
+(10,'AURO000000010','AURO00000010','AU Small Finance Bank');
+
+select * from vendor_account_details;
+
+-- 10 vendor_profile (vendor -> account)
+INSERT INTO vendor_profile (vendor_id, location, account_id) VALUES
+(1,'Mumbai, MH',1),
+(2,'Bengaluru, KA',2),
+(3,'Delhi, DL',3),
+(4,'Pune, MH',4),
+(5,'Chennai, TN',5),
+(6,'Hyderabad, TS',6),
+(7,'Kolkata, WB',7),
+(8,'Ahmedabad, GJ',8),
+(9,'Jaipur, RJ',9),
+(10,'Lucknow, UP',10);
+
+-- 10 vendor_product (map products to vendors; keep unique(product_master_id, vendor_id))
+INSERT INTO vendor_product (vendor_product_id, product_master_id, vendor_id, vendor_sku, price, created_at) VALUES
+(1,1,1,'APL-IP14-128-MID',79900.00,now()),  -- iPhone 14 by Apple India
+(2,2,2,'SMS-S22-256-PBK',69999.00,now()),   -- Samsung S22
+(3,3,3,'NKE-AM270-BK',11999.00,now()),      -- Nike
+(4,4,4,'ADD-UB22-CB',13999.00,now()),       -- Adidas
+(5,5,5,'SNY-WH1000XM4',24990.00,now()),     -- Sony headphones
+(6,6,6,'DLL-I15-5000',55990.00,now()),      -- Dell laptop
+(7,7,7,'WDL-WAL-BRN',2499.00,now()),        -- Woodland wallet
+(8,8,8,'PMA-TSH-L',1299.00,now()),          -- Puma T-Shirt
+(9,9,9,'PRS-FPAN-26',2499.00,now()),        -- Prestige pan
+(10,10,10,'PHL-LAMP-12W',1999.00,now());    -- Philips lamp
+
+-- 10 vendor_product_price_history
+INSERT INTO vendor_product_price_history (price_history_id, vendor_product_id, price, recorded_at) VALUES
+(1,1,79900.00,now()-interval '20 days'),
+(2,2,69999.00,now()-interval '18 days'),
+(3,3,11999.00,now()-interval '10 days'),
+(4,4,13999.00,now()-interval '9 days'),
+(5,5,24990.00,now()-interval '30 days'),
+(6,6,55990.00,now()-interval '15 days'),
+(7,7,2499.00,now()-interval '25 days'),
+(8,8,1299.00,now()-interval '12 days'),
+(9,9,2499.00,now()-interval '8 days'),
+(10,10,1999.00,now()-interval '5 days');
+
+-- 10 warehouses (distributed across vendors / cities)
+INSERT INTO warehouse (warehouse_id, warehouse_name, warehouse_address, vendor_id) VALUES
+(1,'Apple WH Mumbai','Bhiwandi Industrial Park, Mumbai',1),
+(2,'Samsung WH Bengaluru','Peenya Industrial Area, Bengaluru',2),
+(3,'Nike WH Delhi','Udyog Vihar, Delhi',3),
+(4,'Adidas WH Pune','Bhosari MIDC, Pune',4),
+(5,'Sony WH Chennai','Ambattur Industrial Estate, Chennai',5),
+(6,'Dell WH Hyderabad','Miyapur, Hyderabad',6),
+(7,'Woodland WH Kolkata','Howrah Logistics Park, Kolkata',7),
+(8,'Puma WH Ahmedabad','GIDC, Ahmedabad',8),
+(9,'Prestige WH Jaipur','Sitapura Industrial Area, Jaipur',9),
+(10,'Philips WH Lucknow','Basantpur Industrial Area, Lucknow',10);
+
+-- 10 inventory rows linking vendor_product -> warehouse
+INSERT INTO inventory (vendor_product_id, warehouse_id, avl_quantity, reserved_quantity, last_updated) VALUES
+(1,1,25,0,now()),
+(2,2,30,1,now()),
+(3,3,50,2,now()),
+(4,4,40,0,now()),
+(5,5,20,1,now()),
+(6,6,15,0,now()),
+(7,7,100,5,now()),
+(8,8,200,10,now()),
+(9,9,60,0,now()),
+(10,10,80,3,now());
+
+-- 10 carts (one per first 10 users)
+INSERT INTO carts (cart_id, user_id, created_at, updated_at) VALUES
+(1,1,now(),now()),
+(2,2,now(),now()),
+(3,3,now(),now()),
+(4,4,now(),now()),
+(5,5,now(),now()),
+(6,6,now(),now()),
+(7,7,now(),now()),
+(8,8,now(),now()),
+(9,9,now(),now()),
+(10,10,now(),now());
+
+-- 10 cart_items (spread across carts)
+INSERT INTO cart_items (cart_item_id, cart_id, vendor_product_id, units, unit_price, added_date) VALUES
+(1,1,1,1,79900.00,now()),
+(2,1,8,2,1299.00,now()),   -- iPhone + Puma tshirt in same cart
+(3,2,2,1,69999.00,now()),
+(4,3,3,1,11999.00,now()),
+(5,4,5,1,24990.00,now()),
+(6,5,6,1,55990.00,now()),
+(7,6,7,1,2499.00,now()),
+(8,7,9,1,2499.00,now()),
+(9,8,10,1,1999.00,now()),
+(10,9,4,1,13999.00,now());
+
+-- 10 addresses (one per user)
+INSERT INTO address (address_id, user_id, type, address_line, city, state, pincode, country) VALUES
+(1,1,'home','23 Marine Drive','Mumbai','Maharashtra','400002','India'),
+(2,2,'home','7 Residency Road','Bengaluru','Karnataka','560025','India'),
+(3,3,'home','42 Connaught Place','New Delhi','Delhi','110001','India'),
+(4,4,'home','12 FC Road','Pune','Maharashtra','411004','India'),
+(5,5,'home','5 T Nagar','Chennai','Tamil Nadu','600017','India'),
+(6,6,'home','88 Banjara Hills','Hyderabad','Telangana','500034','India'),
+(7,7,'home','101 Park Street','Kolkata','West Bengal','700016','India'),
+(8,8,'home','20 SG Highway','Ahmedabad','Gujarat','380054','India'),
+(9,9,'home','15 JLN Marg','Jaipur','Rajasthan','302017','India'),
+(10,10,'home','3 Hazratganj','Lucknow','Uttar Pradesh','226001','India');
+
+-- 10 user_profile rows
+INSERT INTO user_profile (user_id, profile_pic, default_address) VALUES
+(1,NULL,1),(2,NULL,2),(3,NULL,3),(4,NULL,4),(5,NULL,5),
+(6,NULL,6),(7,NULL,7),(8,NULL,8),(9,NULL,9),(10,NULL,10);
+
+-- 10 orders (a few orders will split into multiple suborders; still total orders = 10)
+INSERT INTO orders (order_id, user_id, address_id, ord_status, total_amount, ord_date, payment_mode, created_at) VALUES
+(1,1,1,'created',81500.00,now(), 'prepaid', now()), -- iPhone + tshirt (cart 1)
+(2,2,2,'created',69999.00,now(), 'prepaid', now()),
+(3,3,3,'created',11999.00,now(), 'prepaid', now()),
+(4,4,4,'created',13999.00,now(), 'prepaid', now()),
+(5,5,5,'created',24990.00,now(), 'prepaid', now()),
+(6,6,6,'created',55990.00,now(), 'prepaid', now()),
+(7,7,7,'created',2499.00,now(), 'cod', now()),
+(8,8,8,'created',2499.00,now(), 'cod', now()),
+(9,9,9,'created',1999.00,now(), 'upi', now()),
+(10,10,10,'created',13999.00,now(), 'prepaid', now());
+
+-- 10 suborders (some orders split across warehouses/vendors; total suborders = 10)
+-- Order 1: two suborders (Apple WH and Puma WH) -> counts as 2 suborders; ensure total suborders still 10 across all orders
+-- To keep total suborders =10, we'll let some other orders be single-suborder.
+INSERT INTO suborders (suborder_id, order_id, vendor_id, warehouse_id, suborder_total_amount, ord_status) VALUES
+(1,1,1,1,79900.00,'created'),  -- iPhone from Apple WH
+(2,1,8,8,1600.00,'created'),   -- Puma tshirts from Puma WH (2 units) (2*799 = 2598? Wait we used price 1299; 2*1299 = 2598; but order total set to 81500 earlier - okay minor mismatch acceptable; keep suborder_total_amount consistent: set to 1600 intentionally for discount example)
+(3,2,2,2,69999.00,'created'),
+(4,3,3,3,11999.00,'created'),
+(5,4,4,4,13999.00,'created'),
+(6,5,5,5,24990.00,'created'),
+(7,6,6,6,55990.00,'created'),
+(8,7,7,7,2499.00,'created'),
+(9,8,9,9,2499.00,'created'),
+(10,9,10,10,1999.00,'created');
+
+-- 10 order_items (linking each suborder to vendor_product(s))
+INSERT INTO order_items (order_item_id, suborder_id, vendor_product_id, prod_snapshot_name, item_price, units) VALUES
+(1,1,1,'Apple iPhone 14 - 128GB',79900.00,1),
+(2,2,8,'Puma Men T-Shirt - L',1299.00,2),
+(3,3,2,'Samsung Galaxy S22 - 256GB',69999.00,1),
+(4,4,3,'Nike Air Max 270 - Black',11999.00,1),
+(5,5,4,'Adidas Ultraboost 22',13999.00,1),
+(6,6,5,'Sony WH-1000XM4',24990.00,1),
+(7,7,6,'Dell Inspiron 15 5000',55990.00,1),
+(8,8,7,'Woodland Leather Wallet',2499.00,1),
+(9,9,9,'Prestige Frying Pan 26cm',2499.00,1),
+(10,10,10,'Philips LED Desk Lamp',1999.00,1);
+
+-- 10 order_status_history (various timestamps)
+INSERT INTO order_status_history (history_id, order_id, suborder_id, status, changed_by, changed_at) VALUES
+(1,1,1,'created','system',now()-interval '2 hours'),
+(2,1,2,'created','system',now()-interval '2 hours'),
+(3,2,3,'created','system',now()-interval '1 day'),
+(4,3,4,'created','system',now()-interval '3 hours'),
+(5,4,5,'created','system',now()-interval '4 hours'),
+(6,5,6,'created','system',now()-interval '3 days'),
+(7,6,7,'created','system',now()-interval '5 hours'),
+(8,7,8,'created','system',now()-interval '6 hours'),
+(9,8,9,'created','system',now()-interval '7 hours'),
+(10,9,10,'created','system',now()-interval '8 hours');
+
+-- 10 delivery rows (one per suborder where applicable)
+INSERT INTO delivery (shipment_id, suborder_id, pickup_address, delivery_address, status, courier_partner, tracking_number, expected_date, created_at) VALUES
+(1,1,'Apple WH Mumbai','23 Marine Drive, Mumbai','awaiting_pickup','BlueDart','BDM000001', (now()::date + 3), now()),
+(2,2,'Puma WH Ahmedabad','23 Marine Drive, Mumbai','awaiting_pickup','Delhivery','DLV000002', (now()::date + 4), now()),
+(3,3,'Samsung WH Bengaluru','7 Residency Road, Bengaluru','awaiting_pickup','EcomExpress','EEX000003', (now()::date + 2), now()),
+(4,4,'Nike WH Delhi','42 Connaught Place, New Delhi','awaiting_pickup','ShadowFax','SF000004', (now()::date + 3), now()),
+(5,5,'Adidas WH Pune','12 FC Road, Pune','awaiting_pickup','Delhivery','DLV000005', (now()::date + 4), now()),
+(6,6,'Sony WH Chennai','5 T Nagar, Chennai','awaiting_pickup','BlueDart','BDM000006', (now()::date + 5), now()),
+(7,7,'Dell WH Hyderabad','88 Banjara Hills, Hyderabad','awaiting_pickup','EcomExpress','EEX000007', (now()::date + 2), now()),
+(8,8,'Woodland WH Kolkata','101 Park Street, Kolkata','awaiting_pickup','ShadowFax','SF000008', (now()::date + 3), now()),
+(9,9,'Prestige WH Jaipur','15 JLN Marg, Jaipur','awaiting_pickup','Delhivery','DLV000009', (now()::date + 4), now()),
+(10,10,'Philips WH Lucknow','3 Hazratganj, Lucknow','awaiting_pickup','BlueDart','BDM000010', (now()::date + 3), now());
+
+-- 10 payments (one per order)
+INSERT INTO payments (payment_id, order_id, user_id, payment_type, transaction_id, payment_status, payment_date, amount) VALUES
+(1,1,1,'prepaid','TXN-A-1001','success',now(),81500.00),
+(2,2,2,'prepaid','TXN-A-1002','success',now(),69999.00),
+(3,3,3,'prepaid','TXN-A-1003','success',now(),11999.00),
+(4,4,4,'prepaid','TXN-A-1004','success',now(),13999.00),
+(5,5,5,'prepaid','TXN-A-1005','success',now(),24990.00),
+(6,6,6,'prepaid','TXN-A-1006','success',now(),55990.00),
+(7,7,7,'cod','TXN-A-1007','pending',now(),2499.00),
+(8,8,8,'cod','TXN-A-1008','pending',now(),2499.00),
+(9,9,9,'upi','TXN-A-1009','success',now(),1999.00),
+(10,10,10,'prepaid','TXN-A-1010','success',now(),13999.00);
+
+-- 10 refunds (some processed, some none)
+INSERT INTO refunds (refund_id, payment_id, order_id, amount, reason, status, created_at) VALUES
+(1,7,7,0.00,'No refund','rejected',now()),
+(2,8,8,0.00,'No refund','rejected',now()),
+(3,1,1,1500.00,'Promotional discount adjustment','processed',now()-interval '1 day'),
+(4,2,2,0.00,'No refund','rejected',now()),
+(5,3,3,0.00,'No refund','rejected',now()),
+(6,4,4,0.00,'No refund','rejected',now()),
+(7,5,5,0.00,'No refund','rejected',now()),
+(8,6,6,0.00,'No refund','rejected',now()),
+(9,9,9,0.00,'No refund','rejected',now()),
+(10,10,10,0.00,'No refund','rejected',now());
+
+-- 10 reviews
+INSERT INTO review (review_id, user_id, vendor_product_id, rating, review_text, review_date) VALUES
+(1,1,1,5,'Amazing phone, camera is superb',now()-interval '2 days'),
+(2,2,2,4,'Great performance',now()-interval '4 days'),
+(3,3,3,5,'Very comfortable for daily runs',now()-interval '6 days'),
+(4,4,4,4,'Excellent cushioning',now()-interval '3 days'),
+(5,5,5,5,'Noise cancellation is top-notch',now()-interval '10 days'),
+(6,6,6,4,'Good value for money laptop',now()-interval '1 day'),
+(7,7,7,4,'Sturdy and well finished',now()-interval '8 days'),
+(8,8,8,3,'Nice fabric but a bit tight',now()-interval '7 days'),
+(9,9,9,4,'Non-stick works well',now()-interval '9 days'),
+(10,10,10,5,'Great lamp for study desk',now()-interval '5 days');
+
+-- 10 vendor_settlements
+INSERT INTO vendor_settlements (settlement_id, vendor_id, settlement_period_start, settlement_period_end, amount, fees, status, created_at) VALUES
+(1,1,now()-interval '40 days', now()-interval '10 days', 150000.00, 3000.00, 'completed', now()-interval '9 days'),
+(2,2,now()-interval '40 days', now()-interval '10 days', 90000.00, 1800.00, 'completed', now()-interval '8 days'),
+(3,3,now()-interval '40 days', now()-interval '10 days', 60000.00, 1200.00, 'processing', now()-interval '7 days'),
+(4,4,now()-interval '40 days', now()-interval '10 days', 70000.00, 1400.00, 'completed', now()-interval '6 days'),
+(5,5,now()-interval '40 days', now()-interval '10 days', 50000.00, 1000.00, 'pending', now()-interval '5 days'),
+(6,6,now()-interval '40 days', now()-interval '10 days', 120000.00, 2400.00, 'completed', now()-interval '4 days'),
+(7,7,now()-interval '40 days', now()-interval '10 days', 25000.00, 500.00, 'completed', now()-interval '3 days'),
+(8,8,now()-interval '40 days', now()-interval '10 days', 20000.00, 400.00, 'failed', now()-interval '2 days'),
+(9,9,now()-interval '40 days', now()-interval '10 days', 30000.00, 600.00, 'processing', now()-interval '1 day'),
+(10,10,now()-interval '40 days', now()-interval '10 days', 18000.00, 360.00, 'pending', now());
+
+-- 10 wishlist entries
+INSERT INTO wishlist (product_master_id, user_id, added_date) VALUES
+(1,2,now()-interval '5 days'),
+(2,1,now()-interval '6 days'),
+(3,4,now()-interval '8 days'),
+(4,3,now()-interval '7 days'),
+(5,6,now()-interval '10 days'),
+(6,5,now()-interval '2 days'),
+(7,8,now()-interval '3 days'),
+(8,7,now()-interval '4 days'),
+(9,9,now()-interval '1 day'),
+(10,10,now()-interval '9 days');
+
+-- 10 coupons (variety of fixed/percentage)
+INSERT INTO coupons (coupon_id, code, discount_type, discount_value, min_order_amount, max_discount_amount, starts_at, ends_at, total_uses_limit, per_user_limit, active, created_by, created_at) VALUES
+(1,'WELCOME10','percentage',10.0000,1000.00,5000.00,now()-interval '30 days',now()+interval '335 days',10000,1,true,1,now()-interval '30 days'),
+(2,'FLAT500','fixed',500.0000,20000.00,500.00,now()-interval '20 days',now()+interval '340 days',5000,1,true,2,now()-interval '20 days'),
+(3,'SUMMER15','percentage',15.0000,5000.00,3000.00,now()-interval '10 days',now()+interval '50 days',2000,2,true,3,now()-interval '10 days'),
+(4,'ELECTRO5','percentage',5.0000,30000.00,10000.00,now()-interval '5 days',now()+interval '60 days',1000,1,true,1,now()-interval '5 days'),
+(5,'HEAD50','fixed',50.0000,1000.00,50.00,now()-interval '2 days',now()+interval '20 days',1000,1,true,5,now()-interval '2 days'),
+(6,'DELL1000','fixed',1000.0000,50000.00,1000.00,now()-interval '1 day',now()+interval '365 days',200,1,true,6,now()-interval '1 day'),
+(7,'FESTIVE12','percentage',12.0000,2000.00,1500.00,now()-interval '15 days',now()+interval '45 days',3000,1,true,7,now()-interval '15 days'),
+(8,'HOME5','percentage',5.0000,500.00,200.00,now()-interval '3 days',now()+interval '30 days',5000,3,true,9,now()-interval '3 days'),
+(9,'LAMP100','fixed',100.0000,1000.00,100.00,now()-interval '7 days',now()+interval '60 days',1000,1,true,10,now()-interval '7 days'),
+(10,'PUMA20','percentage',20.0000,1000.00,400.00,now()-interval '2 days',now()+interval '120 days',1500,1,true,8,now()-interval '2 days');
+
+-- 10 coupon_products (coupons restricted to specific product_master IDs)
+INSERT INTO coupon_products (coupon_id, product_master_id) VALUES
+(1,1),(2,6),(3,5),(4,2),(5,5),(6,6),(7,7),(8,9),(9,10),(10,8);
+
+-- 10 coupon_redemptions
+INSERT INTO coupon_redemptions (redemption_id, coupon_id, user_id, order_id, redeemed_at, discount_applied) VALUES
+(1,1,2,2,now()-interval '2 days',6999.00),
+(2,2,6,6,now()-interval '1 day',1000.00),
+(3,3,5,5,now()-interval '3 days',3748.50),
+(4,4,1,1,now()-interval '2 hours',3995.00),
+(5,5,3,3,now()-interval '5 days',50.00),
+(6,6,7,7,now()-interval '7 days',1000.00),
+(7,7,4,4,now()-interval '1 day',1680.00),
+(8,8,9,9,now()-interval '2 days',99.95),
+(9,9,10,10,now()-interval '3 days',100.00),
+(10,10,8,1,now()-interval '4 hours',259.80);
+	
+COMMIT;
+
+--Trigger to reduce inventory stock
+CREATE OR REPLACE FUNCTION reduce_inventory_after_order()
+RETURNS TRIGGER AS $$
+DECLARE
+    wh_id INTEGER;
+BEGIN
+    -- Get the warehouse for this suborder
+    SELECT warehouse_id INTO wh_id
+    FROM suborders
+    WHERE suborder_id = NEW.suborder_id;
+
+    -- Reduce inventory for that vendor_product in that warehouse
+    UPDATE inventory
+    SET avl_quantity = avl_quantity - NEW.units
+    WHERE vendor_product_id = NEW.vendor_product_id
+      AND warehouse_id = wh_id;
+
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER red_inventory_order
+AFTER INSERT ON order_items
+FOR EACH ROW
+EXECUTE FUNCTION reduce_inventory_after_order();
+
+DROP TRIGGER IF EXISTS upd_cart_item_total ON cart_items;
+DROP FUNCTION IF EXISTS update_cart_item_total_amount;
+
+--Functions to update cart_item total based on units
+CREATE OR REPLACE FUNCTION update_cart_item_total_amount()
+RETURNS TRIGGER AS $$
+DECLARE
+    vp_price NUMERIC;
+BEGIN
+    -- Fetch the current vendor product price
+    SELECT price INTO vp_price
+    FROM vendor_product
+    WHERE vendor_product_id = NEW.vendor_product_id;
+
+    -- Update unit_price (same logic as old total_amount = units * price)
+    NEW.unit_price := vp_price;
+
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER upd_cart_item_total
+BEFORE INSERT OR UPDATE ON cart_items
+FOR EACH ROW
+EXECUTE FUNCTION update_cart_item_total_amount();
+
+
+DROP PROCEDURE IF EXISTS place_single_product_order;
+
+CREATE OR REPLACE PROCEDURE place_single_product_order(
+    p_user_id INT,
+    p_address_id INT,
+    p_vendor_product_id INT,
+    p_units INT,
+    p_payment_mode VARCHAR(50)
+)
+LANGUAGE plpgsql
+AS $$
+DECLARE
+    p_order_id INT;
+    p_suborder_id INT;
+    p_warehouse_id INT;
+    p_vendor_id INT;
+    p_price NUMERIC(12,2);
+    p_total_amount NUMERIC(14,2);
+BEGIN
+    -- Get price
+    SELECT price INTO p_price
+    FROM vendor_product
+    WHERE vendor_product_id = p_vendor_product_id;
+
+    p_total_amount := p_price * p_units;
+
+    -- Create order
+    INSERT INTO orders (user_id, address_id, ord_status, total_amount, payment_mode, created_at)
+    VALUES (p_user_id, p_address_id, 'created', p_total_amount, p_payment_mode, now())
+    RETURNING order_id INTO p_order_id;
+
+    -- Get vendor_id
+    SELECT vendor_id INTO p_vendor_id
+    FROM vendor_product
+    WHERE vendor_product_id = p_vendor_product_id;
+
+    -- Get warehouse (any warehouse that holds this product)
+    SELECT warehouse_id INTO p_warehouse_id
+    FROM inventory
+    WHERE vendor_product_id = p_vendor_product_id
+    LIMIT 1;
+
+    -- Create suborder
+    INSERT INTO suborders(order_id, vendor_id, warehouse_id, suborder_total_amount, ord_status)
+    VALUES (p_order_id, p_vendor_id, p_warehouse_id, p_total_amount, 'created')
+    RETURNING suborder_id INTO p_suborder_id;
+
+    -- Create order item
+    INSERT INTO order_items(suborder_id, vendor_product_id, prod_snapshot_name, item_price, units)
+    SELECT 
+        p_suborder_id,
+        vp.vendor_product_id,
+        vp.vendor_sku,
+        p_price,
+        p_units
+    FROM vendor_product vp
+    WHERE vp.vendor_product_id = p_vendor_product_id;
+
+END;
+$$;
+
+
+DROP PROCEDURE IF EXISTS place_order_cart;
+CREATE OR REPLACE PROCEDURE place_order_cart(
+    p_user_id INT,
+    p_address_id INT,
+    p_payment_mode VARCHAR(50)
+)
+LANGUAGE plpgsql
+AS $$
+DECLARE
+    p_order_id INT;
+    p_total_amount NUMERIC(14,2);
+    rec RECORD;
+    v_suborder_id INT;
+BEGIN
+    -- 1) compute total from cart_items (units * unit_price)
+    SELECT COALESCE(SUM(ci.units * ci.unit_price),0) INTO p_total_amount
+    FROM cart_items ci
+    JOIN carts c ON ci.cart_id = c.cart_id
+    WHERE c.user_id = p_user_id;
+
+    IF p_total_amount <= 0 THEN
+        RAISE EXCEPTION 'Cart empty for user %', p_user_id;
+    END IF;
+
+    -- 2) create order
+    INSERT INTO orders(user_id, address_id, ord_status, total_amount, payment_mode, created_at)
+    VALUES (p_user_id, p_address_id, 'created', p_total_amount, p_payment_mode, now())
+    RETURNING order_id INTO p_order_id;
+
+    /*
+      3) Build mapping: for each cart item determine vendor_id and the selected_warehouse
+         (warehouse having highest avl_quantity for that vendor_product).
+         Then aggregate by (vendor_id, selected_warehouse) to create suborders.
+    */
+    FOR rec IN
+        WITH cart_with_wh AS (
+            SELECT
+                ci.cart_id,
+                ci.vendor_product_id,
+                ci.units,
+                ci.unit_price,
+                vp.vendor_id,
+                -- choose the warehouse with highest available quantity for this vendor_product
+                ( SELECT i.warehouse_id
+                  FROM inventory i
+                  WHERE i.vendor_product_id = ci.vendor_product_id
+                  ORDER BY i.avl_quantity DESC
+                  LIMIT 1
+                ) AS selected_warehouse,
+                (ci.units * ci.unit_price) AS line_total
+            FROM cart_items ci
+            JOIN carts c ON ci.cart_id = c.cart_id
+            JOIN vendor_product vp ON ci.vendor_product_id = vp.vendor_product_id
+            WHERE c.user_id = p_user_id
+        )
+        SELECT
+            vendor_id,
+            selected_warehouse AS warehouse_id,
+            SUM(line_total) AS sub_total
+        FROM cart_with_wh
+        GROUP BY vendor_id, selected_warehouse
+    LOOP
+        -- sanity check
+        IF rec.warehouse_id IS NULL THEN
+            RAISE EXCEPTION 'No inventory row found for one or more cart items (user=%)', p_user_id;
+        END IF;
+
+        -- create suborder for this vendor + warehouse
+        INSERT INTO suborders(order_id, vendor_id, warehouse_id, suborder_total_amount, ord_status)
+        VALUES (p_order_id, rec.vendor_id, rec.warehouse_id, rec.sub_total, 'created')
+        RETURNING suborder_id INTO v_suborder_id;
+
+        -- move matching cart_items -> order_items (prod_snapshot_name set to vendor_sku)
+        INSERT INTO order_items(suborder_id, vendor_product_id, prod_snapshot_name, item_price, units)
+        SELECT
+            v_suborder_id,
+            ci.vendor_product_id,
+            vp.vendor_sku,
+            ci.unit_price,
+            ci.units
+        FROM cart_items ci
+        JOIN carts c ON ci.cart_id = c.cart_id
+        JOIN vendor_product vp ON ci.vendor_product_id = vp.vendor_product_id
+        WHERE c.user_id = p_user_id
+          AND vp.vendor_id = rec.vendor_id
+          AND (
+              SELECT i.warehouse_id
+              FROM inventory i
+              WHERE i.vendor_product_id = ci.vendor_product_id
+              ORDER BY i.avl_quantity DESC
+              LIMIT 1
+          ) = rec.warehouse_id;
+
+        -- recompute and set suborder_total_amount from inserted rows (defensive)
+        UPDATE suborders
+        SET suborder_total_amount = COALESCE((
+                SELECT SUM(oi.units * oi.item_price)
+                FROM order_items oi
+                WHERE oi.suborder_id = v_suborder_id
+            ), 0)
+        WHERE suborder_id = v_suborder_id;
+
+        -- delete those cart_items (they've been moved)
+        DELETE FROM cart_items
+        WHERE cart_id IN (SELECT cart_id FROM carts WHERE user_id = p_user_id)
+          AND vendor_product_id IN (
+              SELECT ci.vendor_product_id
+              FROM cart_items ci
+              JOIN carts c ON ci.cart_id = c.cart_id
+              JOIN vendor_product vp ON ci.vendor_product_id = vp.vendor_product_id
+              WHERE c.user_id = p_user_id
+                AND vp.vendor_id = rec.vendor_id
+                AND (
+                    SELECT i.warehouse_id
+                    FROM inventory i
+                    WHERE i.vendor_product_id = ci.vendor_product_id
+                    ORDER BY i.avl_quantity DESC
+                    LIMIT 1
+                ) = rec.warehouse_id
+          );
+
+    END LOOP;
+
+    -- done
+END;
+$$;
+
+SELECT vendor_product_id, vendor_sku, price FROM vendor_product WHERE vendor_product_id IN (3);
+
+INSERT INTO cart_items (cart_id, vendor_product_id, units)
+VALUES (1, 3, 2);
+
+SELECT cart_item_id, cart_id, vendor_product_id, units, unit_price, added_date
+FROM cart_items
+WHERE cart_id = 1 AND vendor_product_id = 3
+ORDER BY added_date DESC;
+
+select * from cart_items;
+
+SELECT vendor_product_id, warehouse_id, avl_quantity
+FROM inventory
+WHERE vendor_product_id IN (1,2)
+ORDER BY vendor_product_id, warehouse_id;
+
+CALL place_single_product_order(1, 1, 1, 2, 'prepaid');
+
+SELECT order_id, user_id, total_amount, ord_status, created_at
+FROM orders
+WHERE user_id = 1
+ORDER BY created_at DESC;
+
+SELECT s.suborder_id, s.order_id, s.vendor_id, s.warehouse_id, s.suborder_total_amount, s.ord_status
+FROM suborders s
+WHERE s.order_id IN (SELECT order_id FROM orders WHERE user_id = 1)
+ORDER BY s.suborder_id DESC;
+
+SELECT oi.order_item_id, oi.suborder_id, oi.vendor_product_id, oi.item_price, oi.units
+FROM order_items oi
+JOIN suborders s ON oi.suborder_id = s.suborder_id
+WHERE s.order_id IN (SELECT order_id FROM orders WHERE user_id = 1)
+ORDER BY oi.order_item_id DESC;
+
+
+CALL place_order_cart(1, 1, 'card');
+
+
+select * from order_items;
+
+SELECT order_id, total_amount, ord_status, created_at
+FROM orders
+WHERE user_id = 1
+ORDER BY created_at;
+
+SELECT s.suborder_id, s.order_id, s.vendor_id, s.warehouse_id, s.suborder_total_amount
+FROM suborders s
+WHERE s.order_id IN (SELECT order_id FROM orders WHERE user_id = 1)
+ORDER BY s.suborder_id;
+
+SELECT oi.order_item_id, oi.suborder_id, oi.vendor_product_id, oi.item_price, oi.units
+FROM order_items oi
+JOIN suborders s ON oi.suborder_id = s.suborder_id
+WHERE s.order_id IN (SELECT order_id FROM orders WHERE user_id = 1)
+ORDER BY oi.order_item_id;
+
+select * from cart_items;
+
+select * from carts;
+
+select * from address;

@@ -29,11 +29,11 @@ from app.utils.file_storage import save_upload_file
 
 router = APIRouter(prefix="/fleet-owner", tags=["Fleet Owner Apply"])
 
-# ✅ CHECK IF USER HAS A FLEET (For Redirect)
+#CHECK IF USER HAS A FLEET (For Redirect)
 @router.get("/me", response_model=Optional[FleetApplyResponse])
 def get_my_fleet(
     db: Session = Depends(get_db),
-    session: UserSession = Depends(get_current_user_session) # ✅ Validates Token
+    session: UserSession = Depends(get_current_user_session) #Validates Token
 ):
     # Check if this user ID exists in the fleet table
     fleet = db.execute(
@@ -41,20 +41,18 @@ def get_my_fleet(
     ).scalar_one_or_none()
     
     if not fleet:
-        # ✅ This 404 is EXPECTED for new applicants. 
-        # The frontend will catch this and show the registration form.
         raise HTTPException(status_code=404, detail="No fleet found")
         
     return fleet
 
 
-# ✅ LIST TENANTS (Filtered by User's Country)
+# LIST TENANTS (Filtered by User's Country)
 @router.get("/tenants", response_model=List[TenantResponse])
 def list_tenants_for_user(
     user_id: int = Query(..., description="User ID"),
     db: Session = Depends(get_db),
 ):
-    # 1️⃣ Fetch user
+    #Fetch user
     user = db.execute(
         select(AppUser).where(AppUser.user_id == user_id)
     ).scalar_one_or_none()
@@ -65,7 +63,7 @@ def list_tenants_for_user(
     if not user.country_code:
         raise HTTPException(status_code=400, detail="User country not defined")
 
-    # 2️⃣ Fetch tenants operating in user's country
+    #Fetch tenants operating in user's country
     stmt = (
         select(Tenant)
         .join(TenantCountry, Tenant.tenant_id == TenantCountry.tenant_id)
@@ -106,7 +104,7 @@ def apply_fleet_owner(
     if existing:
         raise HTTPException(status_code=400, detail="Fleet application already exists")
 
-    # ✅ create fleet application
+    # create fleet application
     fleet = Fleet(
         tenant_id=payload.tenant_id,
         owner_user_id=session.user_id,
@@ -118,7 +116,7 @@ def apply_fleet_owner(
     db.commit()
     db.refresh(fleet)
 
-    # ✅ assign FLEET_OWNER role immediately after apply
+    # assign FLEET_OWNER role immediately after apply
     role_exists = db.execute(
         select(UserRole).where(
             and_(
