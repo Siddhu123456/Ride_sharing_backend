@@ -89,8 +89,17 @@ class PaymentStatusEnum(str, Enum):
     REFUNDED = "REFUNDED"
 
 
-
 class DriverShiftStatusEnum(str, Enum):
     ONLINE = "ONLINE"
     OFFLINE = "OFFLINE"
     ON_TRIP = "ON_TRIP"
+
+
+class WalletOwnerEnum(str, Enum):
+    TENANT = "TENANT"
+    FLEET_OWNER = "FLEET_OWNER"
+
+
+class WalletTxnTypeEnum(str, Enum):
+    TRIP_EARNING = "TRIP_EARNING"
+    PLATFORM_COMMISSION = "PLATFORM_COMMISSION"

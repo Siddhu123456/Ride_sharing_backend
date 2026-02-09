@@ -104,7 +104,7 @@ def get_rider_trip_history(
         db.query(Trip, Tenant.name.label("tenant_name"))
         .join(Tenant, Tenant.tenant_id == Trip.tenant_id)
         .filter(Trip.rider_id == session.user_id)
-        .order_by(desc(Trip.created_at))
+        .order_by(desc(Trip.created_on))
         .all()
     )
 
@@ -125,7 +125,7 @@ def get_rider_trip_history(
 
                 status=trip.status,
 
-                created_at=trip.created_at,
+                created_at=trip.created_on,
                 completed_at=trip.completed_at,
             )
         )

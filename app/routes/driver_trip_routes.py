@@ -72,7 +72,7 @@ def list_driver_trips(
         select(Trip, Tenant.name)
         .join(Tenant, Tenant.tenant_id == Trip.tenant_id)
         .where(and_(*filters))
-        .order_by(Trip.created_on.desc())
+        .order_by(Trip.requested_at.desc())
         .offset(offset)
         .limit(limit)
     ).all()
@@ -128,8 +128,8 @@ def get_active_trip_for_driver(
             "trip_id": trip.trip_id,
             "status": trip.status.value,
 
-            "pickup_address": reverse_geocode(trip.pickup_lat, trip.pickup_lng),
-            "drop_address": reverse_geocode(trip.drop_lat, trip.drop_lng),
+            "pickup_address": trip.pickup_address,
+            "drop_address": trip.drop_address,
 
             "pickup_lat": trip.pickup_lat,
             "pickup_lng": trip.pickup_lng,

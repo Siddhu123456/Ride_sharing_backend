@@ -25,13 +25,13 @@ class Trip(Base):
     city_id = Column(BigInteger, ForeignKey("city.city_id"), nullable=False, index=True)
     zone_id = Column(BigInteger, ForeignKey("zone.zone_id"), nullable=True, index=True)
 
-    # 📍 Coordinates
+    #  Coordinates
     pickup_lat = Column(Numeric(9, 6), nullable=False)
     pickup_lng = Column(Numeric(9, 6), nullable=False)
     drop_lat = Column(Numeric(9, 6), nullable=True)
     drop_lng = Column(Numeric(9, 6), nullable=True)
 
-    # 🏷 Human readable addresses
+    #  Human readable addresses
     pickup_address = Column(Text, nullable=True)
     drop_address = Column(Text, nullable=True)
 
@@ -61,6 +61,8 @@ class Trip(Base):
         nullable=False,
         server_default="PENDING"
     )
+    
+    fleet_owner_earning = Column(Numeric(10,2), nullable=True)
 
     created_by = Column(BigInteger, ForeignKey("app_user.user_id"))
     created_on = Column(TIMESTAMP(timezone=True), server_default=func.now())

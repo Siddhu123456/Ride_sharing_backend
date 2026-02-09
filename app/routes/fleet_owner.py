@@ -76,14 +76,14 @@ def list_tenants_for_user(
 
 
 
-# ✅ Apply for Fleet Owner under a tenant
+#  Apply for Fleet Owner under a tenant
 @router.post("/apply", response_model=FleetApplyResponse, status_code=status.HTTP_201_CREATED)
 def apply_fleet_owner(
     payload: FleetApplyRequest,
     db: Session = Depends(get_db),
     session: UserSession = Depends(get_current_user_session)
 ):
-    # ✅ tenant must exist
+    #  tenant must exist
     tenant = db.execute(
         select(Tenant).where(Tenant.tenant_id == payload.tenant_id)
     ).scalar_one_or_none()
@@ -91,7 +91,7 @@ def apply_fleet_owner(
     if not tenant:
         raise HTTPException(status_code=404, detail="Tenant not found")
 
-    # ✅ prevent duplicate fleet application for same tenant + user
+    # prevent duplicate fleet application for same tenant + user
     existing = db.execute(
         select(Fleet).where(
             and_(
