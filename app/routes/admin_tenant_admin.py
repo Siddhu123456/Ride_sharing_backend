@@ -19,7 +19,7 @@ from app.schemas.tenant_admin import (
     RemoveTenantAdminResponse,
 )
 
-router = APIRouter(prefix="/admin/tenants", tags=["Admin Tenant Admins"])
+router = APIRouter(prefix="/admin/tenant-admin", tags=["Admin Tenant Admins"])
 
 
 # =========================================================
