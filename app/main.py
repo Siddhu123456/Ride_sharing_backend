@@ -19,6 +19,9 @@ from app.routes.tenant_admin_vehicle_verify import router as tenant_admin_vehicl
 from app.routes.fleet_owner_vehicle_assignment import router as fleet_owner_vehicle_assignment_router
 from app.routes.driver_shift_location import router as driver_shift_location_router
 
+#new routes
+from app.routes.wallet_routes import router as wallet_router
+
 from app.routes.tenant_admin_tenant_setup_routes import router as tenant_admin_setup_router
 
 from app.routes.trip_fare_routes import router as trip_fare_router
@@ -82,6 +85,7 @@ app.include_router(fleet_owner_vehicle_router)
 app.include_router(tenant_admin_vehicle_router)
 app.include_router(fleet_owner_vehicle_assignment_router)
 app.include_router(fleet_overview_router)
+app.include_router(wallet_router)
 
 # =========================
 # DRIVER

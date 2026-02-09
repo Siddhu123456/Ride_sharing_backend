@@ -6,9 +6,9 @@ from app.models.user_session import UserSession
 from app.schemas.enums import TenantRoleEnum  # your enum name
 
 
-def require_role(required_role: TenantRoleEnum):
+def require_role(*required_role: TenantRoleEnum):
     def _checker(session: UserSession = Depends(get_current_user_session)):
-        if session.active_role != required_role:
+        if session.active_role not in required_role:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail=f"Requires role: {required_role}"

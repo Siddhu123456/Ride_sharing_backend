@@ -22,10 +22,9 @@ from app.schemas.tenant_admin import (
 router = APIRouter(prefix="/admin/tenant-admin", tags=["Admin Tenant Admins"])
 
 
-# =========================================================
-# ✅ 1) ASSIGN TENANT ADMIN
+
+# 1) ASSIGN TENANT ADMIN
 # POST /admin/tenants/{tenant_id}/admins
-# =========================================================
 @router.post(
     "/{tenant_id}/admins",
     response_model=TenantAdminResponse,
@@ -37,7 +36,7 @@ def assign_tenant_admin(
     payload: AssignTenantAdminRequest,
     db: Session = Depends(get_db)
 ):
-    # ✅ Tenant must exist
+    # Tenant must exist
     tenant = db.execute(
         select(Tenant).where(Tenant.tenant_id == tenant_id)
     ).scalar_one_or_none()
@@ -45,7 +44,7 @@ def assign_tenant_admin(
     if not tenant:
         raise HTTPException(status_code=404, detail="Tenant not found")
 
-    # ✅ User must exist
+    # User must exist
     user = db.execute(
         select(AppUser).where(AppUser.user_id == payload.user_id)
     ).scalar_one_or_none()
@@ -53,7 +52,7 @@ def assign_tenant_admin(
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
 
-    # ✅ Check already assigned (even if inactive)
+    # Check already assigned (even if inactive)
     existing_admin = db.execute(
         select(TenantAdmin).where(
             and_(
@@ -63,7 +62,7 @@ def assign_tenant_admin(
         )
     ).scalar_one_or_none()
 
-    # ✅ Reactivate if inactive
+    # Reactivate if inactive
     if existing_admin:
         if existing_admin.is_active is False:
             existing_admin.is_active = True
@@ -74,7 +73,7 @@ def assign_tenant_admin(
 
         raise HTTPException(status_code=400, detail="User is already a tenant admin")
 
-    # ✅ If assigning primary admin: unset existing primary (only active ones)
+    # If assigning primary admin: unset existing primary (only active ones)
     if payload.is_primary:
         primary_admin = db.execute(
             select(TenantAdmin).where(
@@ -89,7 +88,7 @@ def assign_tenant_admin(
         if primary_admin:
             primary_admin.is_primary = False
 
-    # ✅ Create new tenant_admin row
+    # Create new tenant_admin row
     tenant_admin = TenantAdmin(
         tenant_id=tenant_id,
         user_id=payload.user_id,
@@ -98,7 +97,7 @@ def assign_tenant_admin(
     )
     db.add(tenant_admin)
 
-    # ✅ Ensure role exists in user_roles as TENANT_ADMIN
+    # Ensure role exists in user_roles as TENANT_ADMIN
     role_exists = db.execute(
         select(UserRole).where(
             and_(
@@ -123,10 +122,8 @@ def assign_tenant_admin(
     return tenant_admin
 
 
-# =========================================================
-# ✅ 2) LIST TENANT ADMINS
+# 2) LIST TENANT ADMINS
 # GET /admin/tenants/{tenant_id}/admins
-# =========================================================
 @router.get(
     "/{tenant_id}/admins",
     response_model=TenantAdminListResponse,
@@ -136,7 +133,7 @@ def list_tenant_admins(
     tenant_id: int,
     db: Session = Depends(get_db)
 ):
-    # ✅ Tenant must exist
+    # Tenant must exist
     tenant = db.execute(
         select(Tenant).where(Tenant.tenant_id == tenant_id)
     ).scalar_one_or_none()
@@ -156,10 +153,9 @@ def list_tenant_admins(
     return TenantAdminListResponse(tenant_id=tenant_id, admins=admins)
 
 
-# =========================================================
-# ✅ 3) REMOVE TENANT ADMIN (SOFT DELETE)
+
+# 3) REMOVE TENANT ADMIN (SOFT DELETE)
 # DELETE /admin/tenants/{tenant_id}/admins/{user_id}
-# =========================================================
 @router.delete(
     "/{tenant_id}/admins/{user_id}",
     response_model=RemoveTenantAdminResponse,
@@ -183,7 +179,7 @@ def remove_tenant_admin(
     if not admin_row:
         raise HTTPException(status_code=404, detail="Tenant admin not found")
 
-    # ✅ Soft delete
+    # Soft delete
     admin_row.is_active = False
     admin_row.is_primary = False
 
