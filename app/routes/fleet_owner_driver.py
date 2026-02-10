@@ -32,7 +32,7 @@ def add_driver_to_fleet_by_email(
     db: Session = Depends(get_db),
     session: UserSession = Depends(get_current_user_session),
 ):
-    # ✅ fleet exists
+    # fleet exists
     fleet = db.execute(
         select(Fleet).where(Fleet.fleet_id == fleet_id)
     ).scalar_one_or_none()
@@ -40,11 +40,11 @@ def add_driver_to_fleet_by_email(
     if not fleet:
         raise HTTPException(status_code=404, detail="Fleet not found")
 
-    # ✅ only fleet owner can add
+    # only fleet owner can add
     if fleet.owner_user_id != session.user_id:
         raise HTTPException(status_code=403, detail="Not allowed")
 
-    # ✅ driver user exists by email
+    # driver user exists by email
     driver_user = db.execute(
         select(AppUser).where(AppUser.email == payload.email)
     ).scalar_one_or_none()
@@ -52,11 +52,8 @@ def add_driver_to_fleet_by_email(
     if not driver_user:
         raise HTTPException(status_code=404, detail="User with this email not found")
 
-    # ✅ prevent owner adding himself as driver
-    if driver_user.user_id == session.user_id:
-        raise HTTPException(status_code=400, detail="Fleet owner cannot be added as a driver")
 
-    # ✅ prevent duplicate active mapping
+    # prevent duplicate active mapping
     existing_mapping = db.execute(
         select(FleetDriver).where(
             and_(
@@ -70,7 +67,7 @@ def add_driver_to_fleet_by_email(
     if existing_mapping:
         raise HTTPException(status_code=400, detail="Driver already added in this fleet")
 
-    # ✅ create fleet_driver mapping
+    # create fleet_driver mapping
     mapping = FleetDriver(
         fleet_id=fleet_id,
         driver_id=driver_user.user_id,
@@ -78,7 +75,7 @@ def add_driver_to_fleet_by_email(
     )
     db.add(mapping)
 
-    # ✅ assign DRIVER role if not already active
+    # assign DRIVER role if not already active
     role_exists = db.execute(
         select(UserRole).where(
             and_(
@@ -96,7 +93,7 @@ def add_driver_to_fleet_by_email(
             is_active=True
         ))
 
-    # ✅ create driver_profile if not exists
+    # create driver_profile if not exists
     profile = db.execute(
         select(DriverProfile).where(
             DriverProfile.driver_id == driver_user.user_id
@@ -112,7 +109,7 @@ def add_driver_to_fleet_by_email(
             )
         )
     else:
-        # ✅ update driver type (optional)
+        # update driver type (optional)
         profile.driver_type = payload.driver_type
         profile.tenant_id = fleet.tenant_id
 

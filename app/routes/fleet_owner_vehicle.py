@@ -23,7 +23,7 @@ from app.utils.file_storage import save_upload_file
 router = APIRouter(prefix="/fleet-owner", tags=["Fleet Owner - Vehicles"])
 
 
-# ✅ Create vehicle under fleet
+# Create vehicle under fleet
 @router.post("/fleets/{fleet_id}/vehicles", response_model=VehicleResponse, status_code=status.HTTP_201_CREATED)
 def add_vehicle_to_fleet(
     fleet_id: int,
@@ -38,7 +38,7 @@ def add_vehicle_to_fleet(
     if fleet.owner_user_id != session.user_id:
         raise HTTPException(status_code=403, detail="Not allowed")
 
-    # ✅ 1 vehicle only in one fleet: registration_no is UNIQUE already
+    # 1 vehicle only in one fleet: registration_no is UNIQUE already
     existing = db.execute(
         select(Vehicle).where(Vehicle.registration_no == payload.registration_no)
     ).scalar_one_or_none()
@@ -63,7 +63,7 @@ def add_vehicle_to_fleet(
     return vehicle
 
 
-# ✅ Upload vehicle document
+# Upload vehicle document
 @router.post("/vehicles/{vehicle_id}/documents", response_model=VehicleDocumentResponse, status_code=201)
 def upload_vehicle_document(
     vehicle_id: int,
@@ -86,7 +86,7 @@ def upload_vehicle_document(
     if not fleet or fleet.owner_user_id != session.user_id:
         raise HTTPException(status_code=403, detail="Not allowed")
 
-    # ✅ stop reupload same type
+    # stop reupload same type
     existing = db.execute(
         select(VehicleDocument).where(
             and_(
@@ -113,8 +113,7 @@ def upload_vehicle_document(
     db.refresh(doc)
     return doc
 
-
-# ✅ Fleet owner checks vehicle docs status
+#  Fleet owner checks vehicle docs status
 @router.get("/vehicles/{vehicle_id}/documents/status", response_model=VehicleDocStatusResponse)
 def vehicle_doc_status(
     vehicle_id: int,

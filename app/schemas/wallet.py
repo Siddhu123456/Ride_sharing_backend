@@ -1,9 +1,17 @@
-from typing import Optional
+from typing import Optional, List
 from pydantic import BaseModel
 from decimal import Decimal
 from datetime import datetime
 
-from app.schemas.enums import WalletOwnerEnum, WalletTxnTypeEnum
+from app.schemas.enums import (
+    WalletOwnerEnum,
+    WalletTxnReasonEnum,
+    WalletTxnDirectionEnum
+)
+
+# -------------------------------------------------
+# Wallet
+# -------------------------------------------------
 
 class WalletResponse(BaseModel):
     wallet_id: int
@@ -13,15 +21,28 @@ class WalletResponse(BaseModel):
         from_attributes = True
 
 
+# -------------------------------------------------
+# Wallet Transaction Item
+# -------------------------------------------------
+
 class WalletTransactionItem(BaseModel):
     transaction_id: int
     trip_id: Optional[int]
 
     amount: Decimal
-    transaction_type: WalletTxnTypeEnum
+    direction: WalletTxnDirectionEnum
+    reason: WalletTxnReasonEnum
 
     created_on: datetime
 
+    model_config = {
+        "from_attributes": True
+    }
+
+
+# -------------------------------------------------
+# Paginated Response
+# -------------------------------------------------
 
 class WalletTransactionListResponse(BaseModel):
     wallet_id: int
@@ -29,9 +50,12 @@ class WalletTransactionListResponse(BaseModel):
     owner_id: int
 
     balance: Decimal
-
-    transactions: list[WalletTransactionItem]
+    transactions: List[WalletTransactionItem]
 
     page: int
     limit: int
     total: int
+
+    model_config = {
+        "from_attributes": True
+    }

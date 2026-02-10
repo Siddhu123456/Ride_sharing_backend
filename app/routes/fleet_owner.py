@@ -14,7 +14,7 @@ from app.models.fleet import Fleet
 from app.models.fleet_document import FleetDocument
 
 from app.schemas.admin_tenant import TenantResponse
-from app.schemas.enums import FleetDocumentTypeEnum, TenantRoleEnum
+from app.schemas.enums import ApprovalStatusEnum, FleetDocumentTypeEnum, TenantRoleEnum
 from app.schemas.fleet_owner_apply import (
     FleetApplyRequest, FleetApplyResponse
 )
@@ -138,15 +138,21 @@ def apply_fleet_owner(
     return fleet
 
 
-@router.post("/fleets/{fleet_id}/documents", response_model=FleetDocumentResponse, status_code=201)
+@router.post(
+    "/fleets/{fleet_id}/documents",
+    response_model=FleetDocumentResponse,
+    status_code=201
+)
 def upload_fleet_document(
     fleet_id: int,
     document_type: FleetDocumentTypeEnum = Form(...),
     document_number: str | None = Form(None),
     file: UploadFile = File(...),
+
     db: Session = Depends(get_db),
     session: UserSession = Depends(get_current_user_session)
 ):
+    # fleet must exist
     fleet = db.execute(
         select(Fleet).where(Fleet.fleet_id == fleet_id)
     ).scalar_one_or_none()
@@ -157,8 +163,8 @@ def upload_fleet_document(
     if fleet.owner_user_id != session.user_id:
         raise HTTPException(status_code=403, detail="Not allowed")
 
-    # ✅ stop re-upload same document type
-    existing = db.execute(
+    # check existing document
+    existing_doc = db.execute(
         select(FleetDocument).where(
             and_(
                 FleetDocument.fleet_id == fleet_id,
@@ -167,17 +173,40 @@ def upload_fleet_document(
         )
     ).scalar_one_or_none()
 
-    if existing:
-        raise HTTPException(status_code=400, detail="This document type is already uploaded")
+    # approved docs cannot be re-uploaded
+    if (
+        existing_doc
+        and existing_doc.verification_status == ApprovalStatusEnum.APPROVED
+    ):
+        raise HTTPException(
+            status_code=400,
+            detail="Approved document cannot be re-uploaded"
+        )
 
-    # ✅ store file
-    stored_path = save_upload_file(file, folder=f"fleet_docs/{fleet_id}")
+    # save file
+    stored_path = save_upload_file(
+        file,
+        folder=f"fleet_docs/{fleet_id}"
+    )
 
+    # re-upload (PENDING or REJECTED)
+    if existing_doc:
+        existing_doc.file_url = stored_path
+        existing_doc.document_number = document_number
+        existing_doc.verification_status = ApprovalStatusEnum.PENDING
+        existing_doc.created_by = session.user_id  # or updated_by if you add it
+
+        db.commit()
+        db.refresh(existing_doc)
+        return existing_doc
+
+    # first-time upload
     doc = FleetDocument(
         fleet_id=fleet_id,
         document_type=document_type,
         file_url=stored_path,
         document_number=document_number,
+        verification_status=ApprovalStatusEnum.PENDING,
         created_by=session.user_id
     )
 
@@ -186,7 +215,8 @@ def upload_fleet_document(
     db.refresh(doc)
     return doc
 
-# ✅ User sees what's uploaded + what's missing (Frontend uses this)
+
+#  User sees what's uploaded + what's missing (Frontend uses this)
 @router.get("/fleets/{fleet_id}/documents/status", response_model=FleetDocumentStatusResponse)
 def get_document_status(
     fleet_id: int,

@@ -100,6 +100,18 @@ class WalletOwnerEnum(str, Enum):
     FLEET_OWNER = "FLEET_OWNER"
 
 
-class WalletTxnTypeEnum(str, Enum):
+class WalletTxnReasonEnum(str, Enum):
     TRIP_EARNING = "TRIP_EARNING"
-    PLATFORM_COMMISSION = "PLATFORM_COMMISSION"
+    COMMISSION_LOCKED = "COMMISSION_LOCKED"
+    COMMISSION_SETTLED = "COMMISSION_SETTLED"
+
+
+class WalletTxnDirectionEnum(str, Enum):
+    CREDIT = "CREDIT"
+    DEBIT = "DEBIT"
+    
+    
+class SettlementStatusEnum(str, Enum):
+    PENDING = "PENDING"
+    COMPLETED = "COMPLETED"
+    FAILED = "FAILED"

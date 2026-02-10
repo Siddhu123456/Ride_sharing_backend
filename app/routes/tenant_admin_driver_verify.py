@@ -7,6 +7,7 @@ from sqlalchemy import select, and_
 
 from app.core.database import get_db
 from app.core.role_guard import require_role
+from app.models.user import AppUser
 from app.schemas.driver_docs import DriverDocumentResponse
 from app.schemas.driver_management import PendingDriverResponse
 from app.schemas.enums import TenantRoleEnum, ApprovalStatusEnum
@@ -26,8 +27,8 @@ from app.services.driver_workflow import (
 
 router = APIRouter(prefix="/tenant-admin/drivers", tags=["Tenant Admin - Driver Verification"])
 
-# ✅ 1) LIST PENDING DRIVERS (like fleets pending)
-@router.get("/pending", response_model=List[PendingDriverResponse])
+
+@router.get("/pending", response_model=list[PendingDriverResponse])
 def list_pending_drivers(
     db: Session = Depends(get_db),
     session: UserSession = Depends(require_role(TenantRoleEnum.TENANT_ADMIN)),
@@ -39,20 +40,35 @@ def list_pending_drivers(
     if not tenant_admin:
         raise HTTPException(status_code=403, detail="Not a tenant admin")
 
-    drivers = db.execute(
-        select(DriverProfile)
+    result = db.execute(
+        select(
+            DriverProfile.driver_id,
+            AppUser.full_name,
+            DriverProfile.approval_status,
+            DriverProfile.driver_type
+        )
+        .join(AppUser, AppUser.user_id == DriverProfile.driver_id)
         .join(DriverDocument, DriverDocument.driver_id == DriverProfile.driver_id)
         .where(
             DriverProfile.tenant_id == tenant_admin.tenant_id,
             DriverProfile.approval_status == ApprovalStatusEnum.PENDING
         )
         .distinct()
-    ).scalars().all()
+    ).all()
 
-    return drivers
+    return [
+        PendingDriverResponse(
+            driver_id=row.driver_id,
+            full_name=row.full_name,
+            approval_status=row.approval_status,
+            driver_type=row.driver_type
+        )
+        for row in result
+    ]
 
 
-# ✅ 2) GET DRIVER DOCUMENTS (like fleet documents)
+
+# 2) GET DRIVER DOCUMENTS (like fleet documents)
 @router.get("/{driver_id}/documents", response_model=List[DriverDocumentResponse])
 def get_driver_documents(
     driver_id: int,
@@ -66,7 +82,7 @@ def get_driver_documents(
     if not tenant_admin:
         raise HTTPException(status_code=403, detail="Not a tenant admin")
 
-    # ✅ ensure driver belongs to same tenant
+    # ensure driver belongs to same tenant
     driver_profile = db.execute(
         select(DriverProfile).where(DriverProfile.driver_id == driver_id)
     ).scalar_one_or_none()

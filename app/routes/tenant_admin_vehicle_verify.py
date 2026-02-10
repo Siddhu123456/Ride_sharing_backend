@@ -24,7 +24,7 @@ from app.services.vehicle_workflow import (
 router = APIRouter(prefix="/tenant-admin/vehicles", tags=["Tenant Admin - Vehicle Verification"])
 
 
-# ✅ List pending vehicles
+# List pending vehicles
 @router.get("/pending", response_model=List[int])
 def list_pending_vehicles(
     db: Session = Depends(get_db),
@@ -44,10 +44,14 @@ def list_pending_vehicles(
     ).scalars().all()
 
     # return vehicle_ids (or create response model)
-    return [v.vehicle_id for v in vehicles]
+    return [{
+        "vehicle_id": v.vehicle_id, 
+        "vehicle_model": v.model
+        } 
+        for v in vehicles]
 
 
-# ✅ Get vehicle documents
+# List vehicle documents
 @router.get("/{vehicle_id}/documents", response_model=List[VehicleDocumentResponse])
 def get_vehicle_documents(
     vehicle_id: int,

@@ -47,7 +47,7 @@ def bulk_add_cities_for_tenant_country(
     if tenant_admin.tenant_id != tenant_id:
         raise HTTPException(status_code=403, detail="Not allowed for this tenant")
 
-    # ✅ ensure tenant exists
+    # ensure tenant exists
     tenant = db.execute(
         select(Tenant).where(Tenant.tenant_id == tenant_id)
     ).scalar_one_or_none()
@@ -55,7 +55,7 @@ def bulk_add_cities_for_tenant_country(
     if not tenant:
         raise HTTPException(status_code=404, detail="Tenant not found")
 
-    # ✅ ensure tenant has this country enabled and active
+    # ensure tenant has this country enabled and active
     tenant_country = db.execute(
         select(TenantCountry).where(
             and_(
@@ -78,7 +78,7 @@ def bulk_add_cities_for_tenant_country(
     for c in payload.cities:
         city_name = c.name.strip()
 
-        # ✅ 1) Check if city exists in master city table
+        # 1) Check if city exists in master city table
         city = db.execute(
             select(City).where(
                 and_(
@@ -88,7 +88,7 @@ def bulk_add_cities_for_tenant_country(
             )
         ).scalar_one_or_none()
 
-        # ✅ 2) If not exists → create
+        # 2) If not exists → create
         if not city:
             city = City(
                 country_code=country_code,
@@ -100,7 +100,7 @@ def bulk_add_cities_for_tenant_country(
             db.flush()  # get city_id
             created_cities.append(city)
 
-        # ✅ 3) Map into tenant_city if not already mapped
+        # 3) Map into tenant_city if not already mapped
         existing_map = db.execute(
             select(TenantCity).where(
                 and_(

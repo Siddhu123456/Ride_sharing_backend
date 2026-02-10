@@ -1,6 +1,6 @@
 from pydantic import BaseModel, EmailStr
 from datetime import datetime
-from app.schemas.enums import DriverTypeEnum
+from app.schemas.enums import ApprovalStatusEnum, DriverTypeEnum
 
 class AddDriverToFleetByEmailRequest(BaseModel):
     email: EmailStr
@@ -19,10 +19,9 @@ class FleetDriverResponse(BaseModel):
 
 class PendingDriverResponse(BaseModel):
     driver_id: int
-    tenant_id: int
-    driver_type: str
-    approval_status: str
-    created_on: datetime
+    full_name: str
+    approval_status: ApprovalStatusEnum
+    driver_type: DriverTypeEnum
 
     class Config:
         from_attributes = True

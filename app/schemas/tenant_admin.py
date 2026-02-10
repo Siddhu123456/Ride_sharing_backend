@@ -2,6 +2,8 @@ from datetime import datetime
 from typing import List
 from pydantic import BaseModel
 
+from app.schemas.enums import ApprovalStatusEnum, DriverTypeEnum
+
 
 class AssignTenantAdminRequest(BaseModel):
     user_id: int
@@ -27,3 +29,4 @@ class TenantAdminListResponse(BaseModel):
 
 class RemoveTenantAdminResponse(BaseModel):
     message: str
+

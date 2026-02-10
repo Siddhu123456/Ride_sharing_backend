@@ -27,6 +27,8 @@ from app.utils.file_storage import save_upload_file
 
 router = APIRouter(prefix="/driver", tags=["Driver - Documents"])
 
+from app.schemas.enums import ApprovalStatusEnum, DriverDocumentTypeEnum
+
 
 @router.post(
     "/documents",
@@ -34,18 +36,18 @@ router = APIRouter(prefix="/driver", tags=["Driver - Documents"])
     status_code=status.HTTP_201_CREATED
 )
 def upload_driver_document(
-    document_type: str = Form(...),
+    document_type: DriverDocumentTypeEnum = Form(...),
     document_number: Optional[str] = Form(None),
     expiry_date: Optional[date] = Form(None),
     file: UploadFile = File(...),
+
     db: Session = Depends(get_db),
     session: UserSession = Depends(get_current_user_session),
 ):
-    # ✅ driver profile must exist
+    # driver profile must exist
     profile = db.execute(
-        select(DriverProfile).where(
-            DriverProfile.driver_id == session.user_id
-        )
+        select(DriverProfile)
+        .where(DriverProfile.driver_id == session.user_id)
     ).scalar_one_or_none()
 
     if not profile:
@@ -54,8 +56,8 @@ def upload_driver_document(
             detail="Driver profile not created yet"
         )
 
-    # ❌ prevent duplicate document upload
-    existing = db.execute(
+    # check existing document
+    existing_doc = db.execute(
         select(DriverDocument).where(
             and_(
                 DriverDocument.driver_id == session.user_id,
@@ -64,32 +66,48 @@ def upload_driver_document(
         )
     ).scalar_one_or_none()
 
-    if existing:
+    # approved documents cannot be re-uploaded
+    if (
+        existing_doc
+        and existing_doc.verification_status == ApprovalStatusEnum.APPROVED
+    ):
         raise HTTPException(
             status_code=400,
-            detail="This document type already uploaded"
+            detail="Approved document cannot be re-uploaded"
         )
 
-    # ✅ save file locally
-    # example folder: driver_docs/<driver_id>
+    # save file
     folder = f"driver_docs/{session.user_id}"
     file_url = save_upload_file(file, folder)
 
-    # ✅ save DB record
+    # re-upload (PENDING or REJECTED)
+    if existing_doc:
+        existing_doc.file_url = file_url
+        existing_doc.document_number = document_number
+        existing_doc.expiry_date = expiry_date
+        existing_doc.verification_status = ApprovalStatusEnum.PENDING
+        existing_doc.created_by = session.user_id
+
+        db.commit()
+        db.refresh(existing_doc)
+        return existing_doc
+
+    # first-time upload
     doc = DriverDocument(
         driver_id=session.user_id,
         document_type=document_type,
         file_url=file_url,
         document_number=document_number,
         expiry_date=expiry_date,
+        verification_status=ApprovalStatusEnum.PENDING,
         created_by=session.user_id
     )
 
     db.add(doc)
     db.commit()
     db.refresh(doc)
-
     return doc
+
 
 
 

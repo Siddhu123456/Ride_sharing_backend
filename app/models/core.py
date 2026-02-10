@@ -43,7 +43,7 @@ class City(Base):
     timezone = Column(VARCHAR(50), nullable=False)
     currency = Column(CHAR(3), nullable=False)
 
-    # ✅ NEW: city boundary polygon
+    # NEW: city boundary polygon
     boundary = Column(Geometry(geometry_type="POLYGON", srid=4326), nullable=True)
 
     created_by = Column(VARCHAR(20), nullable=False, server_default="admin")
