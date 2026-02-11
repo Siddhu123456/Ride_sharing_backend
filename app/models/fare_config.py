@@ -62,7 +62,6 @@ class FareConfig(Base):
     updated_on = Column(TIMESTAMP(timezone=True))
 
     __table_args__ = (
-        # ⚠️ keep this ONLY if you used Option A
         UniqueConstraint(
             "city_id",
             "vehicle_category",

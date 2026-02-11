@@ -26,7 +26,7 @@ from app.services.fleet_workflow import (
 router = APIRouter(prefix="/tenant-admin/fleets", tags=["Tenant Admin - Fleet Verification"])
 
 
-# ✅ List pending fleet applications in this tenant
+# List pending fleet applications in this tenant
 @router.get("/pending", response_model=list[FleetPendingResponse])
 def list_pending_fleets(
     db: Session = Depends(get_db),
@@ -51,7 +51,7 @@ def list_pending_fleets(
     return fleets
 
 
-# ✅ Tenant admin views fleet documents
+# Tenant admin views fleet documents
 @router.get("/{fleet_id}/documents", response_model=list[FleetDocumentResponse])
 def get_fleet_documents(
     fleet_id: int,
@@ -79,7 +79,7 @@ def get_fleet_documents(
     return docs
 
 
-# ✅ Verify single document (auto approves fleet if last doc approved)
+# Verify single document (auto approves fleet if last doc approved)
 @router.post("/documents/{document_id}/verify", status_code=200)
 def verify_fleet_document(
     document_id: int,
@@ -105,11 +105,11 @@ def verify_fleet_document(
     if not fleet:
         raise HTTPException(status_code=404, detail="Fleet not found")
 
-    # ✅ Tenant restriction
+    # Tenant restriction
     if fleet.tenant_id != tenant_admin.tenant_id:
         raise HTTPException(status_code=403, detail="Not allowed for this tenant")
 
-    # ✅ all docs must be uploaded before verification
+    # all docs must be uploaded before verification
     uploaded_docs = get_fleet_uploaded_docs(db, fleet.fleet_id)
     missing, all_uploaded, _, _ = compute_doc_status(uploaded_docs)
 
@@ -119,7 +119,7 @@ def verify_fleet_document(
             detail=f"All 4 documents must be uploaded before verification. Missing: {missing}"
         )
 
-    # ✅ same admin must approve ALL docs
+    # same admin must approve ALL docs
     already_started_by_other_admin = any(
         d.verified_by is not None and d.verified_by != session.user_id
         for d in uploaded_docs
@@ -131,12 +131,12 @@ def verify_fleet_document(
             detail="Another tenant admin started verification. Only the same admin must approve all documents."
         )
 
-    # ✅ update document
+    # update document
     doc.verification_status = ApprovalStatusEnum.APPROVED if payload.approve else ApprovalStatusEnum.REJECTED
     doc.verified_by = session.user_id
     doc.verified_on = datetime.now(timezone.utc)
 
-    # ✅ only if approved, check auto-approval
+    # only if approved, check auto-approval
     fleet_auto_approved = False
     if payload.approve:
         fleet_auto_approved = auto_approve_fleet_if_ready(db, fleet)

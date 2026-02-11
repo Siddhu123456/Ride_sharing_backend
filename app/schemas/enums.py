@@ -74,7 +74,7 @@ class VehicleCategoryEnum(str, Enum):
     BIKE = "BIKE"
     AUTO = "AUTO"
     CAB = "CAB"
-    AC_CAB = "AC-CAB"
+    AC_CAB = "AC_CAB"
 
 
 class VehicleDocumentTypeEnum(str, Enum):

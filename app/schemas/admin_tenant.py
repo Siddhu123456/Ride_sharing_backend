@@ -47,10 +47,6 @@ class CityCreateRequest(BaseModel):
     currency: str
 
 
-class BulkCitiesCreateRequest(BaseModel):
-    cities: List[CityCreateRequest]
-
-
 class CityResponse(BaseModel):
     city_id: int
     country_code: str
@@ -71,12 +67,3 @@ class TenantCityResponse(BaseModel):
 
     class Config:
         from_attributes = True
-
-
-class BulkCitiesCreateResponse(BaseModel):
-    tenant_id: int
-    country_code: str
-    created_cities: List[CityResponse]
-    mapped_city_ids: List[int]
-    skipped_city_names: List[str]
-
