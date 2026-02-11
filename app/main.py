@@ -21,6 +21,8 @@ from app.routes.driver_shift_location import router as driver_shift_location_rou
 
 #new routes
 from app.routes.wallet_routes import router as wallet_router
+from app.routes.fleet_settlement import router as fleet_settlement_router
+from app.routes.tenant_settlement import router as tenant_settlement_router
 
 from app.routes.tenant_admin_tenant_setup_routes import router as tenant_admin_setup_router
 
@@ -86,22 +88,24 @@ app.include_router(tenant_admin_vehicle_router)
 app.include_router(fleet_owner_vehicle_assignment_router)
 app.include_router(fleet_overview_router)
 app.include_router(wallet_router)
+app.include_router(fleet_settlement_router)
+app.include_router(tenant_settlement_router)
 
 # =========================
 # DRIVER
 # =========================
-app.include_router(driver_profile_router)          # ✅ NEW
-app.include_router(driver_vehicle_router)          # ✅ NEW
+app.include_router(driver_profile_router)          # NEW
+app.include_router(driver_vehicle_router)          # NEW
 app.include_router(driver_shift_location_router)
 app.include_router(driver_offer_router)
-app.include_router(driver_trip_router)              # ✅ NEW
-app.include_router(driver_dashboard_router)          # ✅ NEW
+app.include_router(driver_trip_router)              # NEW
+app.include_router(driver_dashboard_router)          # NEW
 # =========================
 # TRIPS
 # =========================
 app.include_router(trip_fare_router)
 app.include_router(trip_router)
-app.include_router(trip_navigation_router)          # ✅ NEW
+app.include_router(trip_navigation_router)          # NEW
 app.include_router(otp_router)
 app.include_router(lifecycle_router)
 
