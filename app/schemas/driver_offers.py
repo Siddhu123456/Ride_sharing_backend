@@ -1,29 +1,8 @@
-from pydantic import BaseModel
-from typing import Optional
-from datetime import datetime
+"""Compatibility shim: re-export driver schemas from the driver package.
 
+Preserves imports like ``from app.schemas.driver_offers import DriverOfferResponse``.
+"""
 
+from app.schemas.driver.driver_offers import DriverOfferResponse, DriverOfferRespondRequest  # noqa: F401
 
-class DriverOfferResponse(BaseModel):
-    attempt_id: int
-    trip_id: int
-
-    pickup_lat: float
-    pickup_lng: float
-    pickup_address: str
-
-    drop_lat: float
-    drop_lng: float
-    drop_address: str
-
-    distance_km: float   # Distance in kilometers (new field)
-    fare_amount: float
-
-    sent_at: datetime
-
-    class Config:
-        from_attributes = True
-
-
-class DriverOfferRespondRequest(BaseModel):
-    accept: bool
+__all__ = ["DriverOfferResponse", "DriverOfferRespondRequest"]

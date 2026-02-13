@@ -1,15 +1,8 @@
-from pydantic import BaseModel
-from typing import Optional
-from app.schemas.enums import ApprovalStatusEnum, DriverTypeEnum
+"""Compatibility shim: re-export driver schemas from the driver package.
 
+Preserves imports like ``from app.schemas.driver_profile import DriverProfileResponse``.
+"""
 
-class DriverProfileResponse(BaseModel):
-    driver_id: int
-    full_name: str
-    phone: Optional[str]
-    driver_type: DriverTypeEnum
-    rating: float
-    approval_status: ApprovalStatusEnum
+from app.schemas.driver.driver_profile import DriverProfileResponse  # noqa: F401
 
-    class Config:
-        from_attributes = True
+__all__ = ["DriverProfileResponse"]

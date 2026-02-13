@@ -1,27 +1,12 @@
-from pydantic import BaseModel, EmailStr
-from datetime import datetime
-from app.schemas.enums import ApprovalStatusEnum, DriverTypeEnum
+"""Compatibility shim: re-export driver schemas from the driver package.
 
-class AddDriverToFleetByEmailRequest(BaseModel):
-    email: EmailStr
-    driver_type: DriverTypeEnum
+Preserves imports like ``from app.schemas.driver_management import PendingDriverResponse``.
+"""
 
-class FleetDriverResponse(BaseModel):
-    id: int
-    fleet_id: int
-    driver_id: int
-    approval_status: str
-    start_date: datetime
+from app.schemas.driver.driver_management import AddDriverToFleetByEmailRequest, FleetDriverResponse, PendingDriverResponse  # noqa: F401
 
-    class Config:
-        from_attributes = True
-
-
-class PendingDriverResponse(BaseModel):
-    driver_id: int
-    full_name: str
-    approval_status: ApprovalStatusEnum
-    driver_type: DriverTypeEnum
-
-    class Config:
-        from_attributes = True
+__all__ = [
+    "AddDriverToFleetByEmailRequest",
+    "FleetDriverResponse",
+    "PendingDriverResponse",
+]

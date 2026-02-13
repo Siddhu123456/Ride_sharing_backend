@@ -1,22 +1,15 @@
-from datetime import datetime, time
-from typing import Optional
-from pydantic import BaseModel
+"""Compatibility shim.
 
+Implementation moved to `app.schemas.fleet_owner.fleet_vehicle_assignment`.
+This module re-exports assignment schemas so existing imports continue to work.
+"""
 
-class FleetAssignDriverToVehicleRequest(BaseModel):
-    driver_id: int
-    vehicle_id: int
-    start_time: time
-    end_time: time
+from app.schemas.fleet_owner.fleet_vehicle_assignment import (
+    FleetAssignDriverToVehicleRequest,
+    FleetAssignDriverToVehicleResponse,
+)
 
-
-class FleetAssignDriverToVehicleResponse(BaseModel):
-    assignment_id: int
-    fleet_id: int
-    driver_id: int
-    vehicle_id: int
-    start_time: time
-    end_time: time
-
-    class Config:
-        from_attributes = True
+__all__ = [
+    "FleetAssignDriverToVehicleRequest",
+    "FleetAssignDriverToVehicleResponse",
+]

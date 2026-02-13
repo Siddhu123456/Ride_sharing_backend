@@ -1,39 +1,9 @@
-from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy.orm import Session
-from sqlalchemy import select
+"""Compatibility shim: re-export router from the new driver package.
 
-from app.core.database import get_db
-from app.core.deps import get_current_user_session
-from app.models.user_session import UserSession
-from app.models.user import AppUser
-from app.models.driver_profile import DriverProfile
-from app.schemas.driver_profile import DriverProfileResponse
+This file is kept to preserve any direct imports that reference
+``app.routes.driver_profile_routes``. The real implementation now lives in
+``app.routes.driver.profile``.
+"""
 
-router = APIRouter(prefix="/driver", tags=["Driver - Profile"])
-
-
-@router.get("/profile", response_model=DriverProfileResponse)
-def get_driver_profile(
-    db: Session = Depends(get_db),
-    session: UserSession = Depends(get_current_user_session)
-):
-    result = db.execute(
-        select(AppUser, DriverProfile)
-        .join(DriverProfile, DriverProfile.driver_id == AppUser.user_id)
-        .where(AppUser.user_id == session.user_id)
-    ).first()
-
-    if not result:
-        raise HTTPException(status_code=404, detail="Driver profile not found")
-
-    user, profile = result
-
-    return {
-        "driver_id": user.user_id,
-        "full_name": user.full_name,
-        "phone": user.phone,
-    "driver_type": profile.driver_type,      # Driver type included in response
-    "rating": float(profile.rating),          # Rating converted to float
-        "approval_status": profile.approval_status
-    }
+from app.routes.driver.profile import router as router
 

@@ -1,17 +1,8 @@
-from sqlalchemy import Column, BigInteger, ForeignKey, TIMESTAMP, UniqueConstraint, func, Time, Boolean, DateTime
-from app.models.base import Base
+"""Compatibility shim: re-export driver models from the driver package.
 
-class DriverVehicleAssignment(Base):
-    __tablename__ = "driver_vehicle_assignment"
+Preserves imports like ``from app.models.driver_vehicle_assignment import DriverVehicleAssignment``.
+"""
 
-    assignment_id = Column(BigInteger, primary_key=True)
-    driver_id = Column(BigInteger, ForeignKey("app_user.user_id"))
-    vehicle_id = Column(BigInteger, ForeignKey("vehicle.vehicle_id"))
+from app.models.driver.driver_vehicle_assignment import DriverVehicleAssignment  # noqa: F401
 
-    start_time = Column(Time, nullable=False)
-    end_time = Column(Time, nullable=False)
-
-    is_active = Column(Boolean, default=True)
-
-    created_by = Column(BigInteger)
-    created_on = Column(DateTime(timezone=True), server_default=func.now())
+__all__ = ["DriverVehicleAssignment"]

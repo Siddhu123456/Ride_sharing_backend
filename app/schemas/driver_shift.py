@@ -1,35 +1,9 @@
-from pydantic import BaseModel
-from typing import Optional
-from datetime import datetime
+"""Compatibility shim: re-export driver schemas from the driver package.
 
-from app.schemas.enums import DriverShiftStatusEnum
+Preserves imports like ``from app.schemas.driver_shift import DriverShiftResponse``.
+"""
 
+from app.schemas.driver.driver_shift import StartDriverShiftRequest, EndDriverShiftRequest, DriverShiftResponse  # noqa: F401
 
-class StartDriverShiftRequest(BaseModel):
-    driver_id: int
-    tenant_id: int
-    latitude: float
-    longitude: float
-
-
-class EndDriverShiftRequest(BaseModel):
-    driver_id: int
-
-
-class DriverShiftResponse(BaseModel):
-    shift_id: int
-    driver_id: int
-    tenant_id: int
-    vehicle_id: Optional[int]
-
-    status: DriverShiftStatusEnum   # Current status of the driver shift
-    started_at: datetime
-    ended_at: Optional[datetime]
-    expected_end_at: Optional[datetime]
-
-    last_latitude: Optional[float]
-    last_longitude: Optional[float]
-
-    class Config:
-        from_attributes = True
+__all__ = ["StartDriverShiftRequest", "EndDriverShiftRequest", "DriverShiftResponse"]
 

@@ -1,21 +1,12 @@
-from pydantic import BaseModel
-from typing import Optional, List
-from datetime import datetime
+"""Compatibility shim.
 
+Implementation moved to `app.schemas.fleet_owner.fleet_admin`.
+This module re-exports admin schemas so existing imports continue to work.
+"""
 
-class FleetPendingResponse(BaseModel):
-    fleet_id: int
-    tenant_id: int
-    owner_user_id: int
-    fleet_name: str
-    approval_status: str
-    status: str
-    created_on: datetime
+from app.schemas.fleet_owner.fleet_admin import (
+    FleetPendingResponse,
+    FleetApprovalRequest,
+)
 
-    class Config:
-        from_attributes = True
-
-
-class FleetApprovalRequest(BaseModel):
-    approve: bool
-    note: Optional[str] = None  # future use
+__all__ = ["FleetPendingResponse", "FleetApprovalRequest"]

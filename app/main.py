@@ -6,18 +6,18 @@ from app.routes import auth, country, admin_tenant
 from app.routes.admin_tenant_admin import router as tenant_admin_router
 from app.routes.admin_tenant_tax_rule import router as admin_tax_router
 
-from app.routes.fleet_owner import router as fleet_owner_router
+from app.routes.fleet_owner.fleet_owner import router as fleet_owner_router
 from app.routes.tenant_admin_fleet import router as tenant_admin_fleet_router
 
-from app.routes.fleet_owner_driver import router as fleet_owner_driver_router
-from app.routes.driver_docs import router as driver_docs_router
+from app.routes.fleet_owner.fleet_owner_driver import router as fleet_owner_driver_router
+from app.routes.driver.docs import router as driver_docs_router
 from app.routes.tenant_admin_driver_verify import router as tenant_admin_driver_verify_router
 
-from app.routes.fleet_owner_vehicle import router as fleet_owner_vehicle_router
+from app.routes.fleet_owner.fleet_owner_vehicle import router as fleet_owner_vehicle_router
 from app.routes.tenant_admin_vehicle_verify import router as tenant_admin_vehicle_router
 
-from app.routes.fleet_owner_vehicle_assignment import router as fleet_owner_vehicle_assignment_router
-from app.routes.driver_shift_location import router as driver_shift_location_router
+from app.routes.fleet_owner.fleet_owner_vehicle_assignment import router as fleet_owner_vehicle_assignment_router
+from app.routes.driver.shifts import router as driver_shift_location_router
 
 #new routes
 from app.routes.wallet_routes import router as wallet_router
@@ -28,7 +28,7 @@ from app.routes.tenant_admin_tenant_setup_routes import router as tenant_admin_s
 
 from app.routes.trip_fare_routes import router as trip_fare_router
 from app.routes.trip_routes import router as trip_router
-from app.routes.driver_offer_routes import router as driver_offer_router
+from app.routes.driver.offers import router as driver_offer_router
 from app.routes.otp_routes import router as otp_router
 from app.routes.trip_lifecycle_routes import router as lifecycle_router
 from app.routes.rider_trip_routes import router as rider_trip_router
@@ -36,11 +36,11 @@ from app.routes.rider_trip_routes import router as rider_trip_router
 from app.routes.fleet_overview_routes import router as fleet_overview_router
 
 # New routes
-from app.routes.driver_profile_routes import router as driver_profile_router
-from app.routes.driver_vehicle_routes import router as driver_vehicle_router
-from app.routes.driver_trip_routes import router as driver_trip_router
+from app.routes.driver.profile import router as driver_profile_router
+from app.routes.driver.vehicle import router as driver_vehicle_router
+from app.routes.driver.trips import router as driver_trip_router
 from app.routes.trip_navigation_routes import router as trip_navigation_router
-from app.routes.driver_dashboard_routes import router as driver_dashboard_router
+from app.routes.driver.dashboard import router as driver_dashboard_router
 
 from app.routes.rider_routes import router as rider_router
 

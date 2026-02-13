@@ -1,40 +1,9 @@
-from sqlalchemy import Column, BigInteger, Numeric, Enum, TIMESTAMP, ForeignKey, func
-from app.models.base import Base
-from app.schemas.enums import SettlementStatusEnum
+"""Compatibility shim.
 
+Implementation moved to `app.models.fleet_owner.commission_settlement`.
+This module re-exports the `CommissionSettlement` model so existing imports continue to work.
+"""
 
-class CommissionSettlement(Base):
-    __tablename__ = "commission_settlement"
+from app.models.fleet_owner.commission_settlement import CommissionSettlement
 
-    settlement_id = Column(BigInteger, primary_key=True, index=True)
-
-    tenant_id = Column(
-        BigInteger,
-        ForeignKey("tenant.tenant_id"),
-        nullable=False
-    )
-
-    fleet_id = Column(
-        BigInteger,
-        ForeignKey("fleet.fleet_id"),
-        nullable=False
-    )
-
-    total_commission = Column(Numeric(12, 2), nullable=False)
-
-    status = Column(
-        Enum(
-            SettlementStatusEnum,
-            name="settlement_status_enum",
-            create_type=False
-        ),
-        nullable=False,
-        server_default="PENDING"
-    )
-
-    created_on = Column(
-        TIMESTAMP(timezone=True),
-        server_default=func.now()
-    )
-
-    paid_on = Column(TIMESTAMP(timezone=True))
+__all__ = ["CommissionSettlement"]
