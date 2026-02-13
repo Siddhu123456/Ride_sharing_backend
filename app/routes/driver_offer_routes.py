@@ -20,9 +20,7 @@ from app.services.dispatch_service import send_next_offer, assign_trip
 router = APIRouter(prefix="/driver/offers", tags=["Driver Offers - Phase 2"])
 
 
-# =========================================================
-# ✅ Driver views pending offers
-# =========================================================
+# Driver views pending offers
 @router.get("/pending", response_model=list[DriverOfferResponse])
 def pending_offers(
     db: Session = Depends(get_db),
@@ -76,7 +74,7 @@ def pending_offers(
                 drop_lng=row.drop_lng,
                 drop_address=row.drop_address,
 
-                distance_km=round(distance_km, 2),  # ✅ NEW
+                distance_km=round(distance_km, 2),  # Distance in kilometers (rounded)
                 fare_amount=row.fare_amount,
 
                 sent_at=row.sent_at
@@ -88,9 +86,7 @@ def pending_offers(
 
 
 
-# =========================================================
-# ✅ Driver accepts / rejects offer
-# =========================================================
+# Driver accepts / rejects offer
 @router.post("/{attempt_id}/respond", status_code=status.HTTP_200_OK)
 def respond_offer(
     attempt_id: int,
@@ -124,9 +120,7 @@ def respond_offer(
     attempt.updated_by = session.user_id
     attempt.updated_on = now
 
-    # =====================================================
-    # ✅ ACCEPT
-    # =====================================================
+    # Accept flow
     if payload.accept:
         attempt.response = "ACCEPTED"
 
@@ -141,7 +135,7 @@ def respond_offer(
             raise HTTPException(status_code=400, detail=str(e))
 
         db.commit()
-        db.refresh(trip)  # 🔥 IMPORTANT
+        db.refresh(trip)  # Important: refresh trip after assignment
 
         return {
             "trip": {
@@ -160,9 +154,7 @@ def respond_offer(
             }
         }
 
-    # =====================================================
-    # ❌ REJECT
-    # =====================================================
+    # Reject flow
     attempt.response = "REJECTED"
 
     next_offer = send_next_offer(db, trip, created_by=session.user_id)

@@ -21,7 +21,7 @@ from app.services.otp_service import create_trip_otp, verify_trip_otp
 
 router = APIRouter(prefix="/trips", tags=["Trips"])
 
-# ✅ Driver generates OTP at pickup (only if trip is ASSIGNED to him)
+# Driver generates OTP at pickup (only if trip is ASSIGNED to him)
 @router.post("/{trip_id}/otp/generate", response_model=GenerateOtpResponse)
 def generate_trip_otp(
     trip_id: int,
@@ -55,7 +55,7 @@ def get_trip_otp_with_driver_details(
     db: Session = Depends(get_db),
     session: UserSession = Depends(require_role(TenantRoleEnum.RIDER))
 ):
-    # 🔎 Fetch trip
+    # Fetch trip
     trip = db.execute(
         select(Trip).where(
             Trip.trip_id == trip_id,
@@ -66,7 +66,7 @@ def get_trip_otp_with_driver_details(
     if not trip:
         raise HTTPException(404, "Trip not found")
 
-    # ⛔ Driver not assigned yet
+    # Driver not assigned yet
     if not trip.driver_id:
         return {
             "otp": None,
@@ -74,7 +74,7 @@ def get_trip_otp_with_driver_details(
             "vehicle": None
         }
 
-    # 🔐 Fetch OTP
+    # Fetch OTP
     otp = db.execute(
         select(TripOtp).where(TripOtp.trip_id == trip_id)
     ).scalar_one_or_none()
@@ -85,12 +85,12 @@ def get_trip_otp_with_driver_details(
     if otp and otp.expires_at >= current_time:
         otp_code = otp.otp_code
 
-    # 👤 Driver details
+    # Driver details
     driver = db.execute(
         select(AppUser).where(AppUser.user_id == trip.driver_id)
     ).scalar_one()
 
-    # 🚗 Active vehicle assignment
+    # Active vehicle assignment
     assignment = db.execute(
         select(DriverVehicleAssignment)
         .where(
@@ -124,7 +124,7 @@ def get_trip_otp_with_driver_details(
 
 
 
-# ✅ Driver verifies OTP and starts trip => status becomes PICKED_UP
+    # Driver verifies OTP and starts trip; status becomes PICKED_UP
 @router.post("/{trip_id}/otp/verify", status_code=status.HTTP_200_OK)
 def verify_and_start_trip(
     trip_id: int,
@@ -148,16 +148,16 @@ def verify_and_start_trip(
     if not ok:
         raise HTTPException(status_code=400, detail="Invalid or expired OTP")
 
-    # ✅ start trip
+    # Start the trip
     trip.status = TripStatusEnum.PICKED_UP
     trip.picked_up_at = datetime.now(timezone.utc)
     trip.updated_by = session.user_id
     trip.updated_on = datetime.now(timezone.utc)
 
     db.commit()
-    db.refresh(trip)  # 🔥 important
+    db.refresh(trip)  # Important: refresh trip after commit
 
-    # ✅ MATCH FRONTEND EXPECTATION
+    # Match frontend expectation for response
     return {
         "trip_id": trip.trip_id,
         "status": trip.status.value

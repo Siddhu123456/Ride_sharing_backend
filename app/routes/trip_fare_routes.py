@@ -26,14 +26,14 @@ def get_fare_estimates(
     db: Session = Depends(get_db),
     _=Depends(require_role(TenantRoleEnum.RIDER))
 ):
-    # 1️⃣ Detect city
+    # 1) Detect city by pickup location
     city_id = detect_city_by_location(
         db, payload.pickup_lat, payload.pickup_lng
     )
     if not city_id:
         raise HTTPException(400, "Pickup outside service area")
 
-    # 2️⃣ Distance
+    # 2) Compute distance in kilometers
     distance_km = calculate_distance_km(
         payload.pickup_lat,
         payload.pickup_lng,
@@ -41,14 +41,14 @@ def get_fare_estimates(
         payload.drop_lng
     )
 
-    # 3️⃣ Tenants operating in city
+    # 3) Find tenants operating in the city
     tenants = get_tenants_operating_in_city(db, city_id)
 
     estimates = []
 
     for tenant in tenants:
 
-        # 🔥 Get availability for ALL vehicle categories
+    # Get availability for all vehicle categories
         availability_map = count_available_drivers_by_vehicle(
             db=db,
             city_id=city_id,

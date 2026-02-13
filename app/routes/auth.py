@@ -17,7 +17,7 @@ from app.models.user_role import UserRole
 
 router = APIRouter(prefix="/auth", tags=["Auth"])
 
-# ✅ LOGIN: verify password + return roles list
+# Login: verify password and return roles list
 @router.post("/login", response_model=LoginResponse)
 def login(payload: LoginRequest, db: Session = Depends(get_db)):
 
@@ -38,18 +38,18 @@ def login(payload: LoginRequest, db: Session = Depends(get_db)):
     if auth.is_locked:
         raise HTTPException(status_code=403, detail="Account is locked")
 
-    # ✅ Verify password
+    # Verify password
     if not verify_password(payload.password, auth.password_hash):
         raise HTTPException(status_code=401, detail="Invalid credentials")
 
-    # ✅ Fetch roles from user_roles table
+    # Fetch active roles from user_roles table
     db_roles = db.execute(
         select(UserRole.user_role)
         .where(UserRole.user_id == user.user_id)
         .where(UserRole.is_active == True)
     ).scalars().all()
 
-    # ✅ Ensure RIDER is always available
+    # Ensure RIDER role is always present
     roles = set(db_roles)
     roles.add(UserRoleEnum.RIDER)
 
@@ -62,7 +62,7 @@ def login(payload: LoginRequest, db: Session = Depends(get_db)):
 @router.post("/select-role", response_model=TokenResponse)
 def select_role(payload: SelectRoleRequest, db: Session = Depends(get_db)):
 
-    # ✅ Check user exists
+    # Check that the user exists
     user = db.execute(
         select(AppUser).where(AppUser.user_id == payload.user_id)
     ).scalar_one_or_none()
@@ -70,7 +70,7 @@ def select_role(payload: SelectRoleRequest, db: Session = Depends(get_db)):
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
 
-    # ✅ Validate role selection (only for non-RIDER)
+    # Validate role selection (only required for non-RIDER roles)
     if payload.role != UserRoleEnum.RIDER:
         role_exists = db.execute(
             select(UserRole)
@@ -82,7 +82,7 @@ def select_role(payload: SelectRoleRequest, db: Session = Depends(get_db)):
         if not role_exists:
             raise HTTPException(status_code=403, detail="Role not assigned to this user")
 
-    # ✅ 1) Check for existing active session for same user + role
+    # 1) Check for existing active session for the same user and role
     existing_session = db.execute(
         select(UserSession)
         .where(UserSession.user_id == payload.user_id)
@@ -90,19 +90,19 @@ def select_role(payload: SelectRoleRequest, db: Session = Depends(get_db)):
         .where(UserSession.logged_out_at.is_(None))
     ).scalar_one_or_none()
 
-    # ✅ 2) If exists → logout old session (force single login)
+    # 2) If an active session exists, log out the old session (force single login)
     if existing_session:
         existing_session.logged_out_at = datetime.now(timezone.utc)
 
-    # ✅ 3) Create new session
+    # 3) Create a new session
     session = UserSession(
         user_id=payload.user_id,
         active_role=payload.role
     )
     db.add(session)
-    db.flush()  # ✅ gets session_id
+    db.flush()  # gets session_id
 
-    # ✅ 4) Create JWT
+    # 4) Create JWT token
     token = create_access_token({
         "sub": str(payload.user_id),
         "session_id": str(session.session_id),

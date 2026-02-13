@@ -145,11 +145,11 @@ def assign_fleet_driver_to_vehicle(
     if not vehicle:
         raise HTTPException(status_code=400, detail="Vehicle does not belong to this fleet")
 
-    # ✅ TIME vs TIME validation
+    # Validate start/end times (end_time must be after start_time)
     if payload.end_time <= payload.start_time:
         raise HTTPException(status_code=400, detail="end_time must be after start_time")
 
-    # ✅ prevent driver being active elsewhere
+    # Prevent driver being active in another assignment
     active_driver_assignment = db.execute(
         select(DriverVehicleAssignment).where(
             DriverVehicleAssignment.driver_id == payload.driver_id
@@ -162,7 +162,7 @@ def assign_fleet_driver_to_vehicle(
             detail="Driver already assigned to another vehicle"
         )
 
-    # ✅ OVERLAP CHECK (TIME vs TIME ONLY)
+    # Overlap check (time vs time only)
     overlap = db.execute(
         select(DriverVehicleAssignment).where(
             and_(

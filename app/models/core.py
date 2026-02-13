@@ -66,7 +66,7 @@ class Zone(Base):
     center_lat = Column(DECIMAL(9, 6), nullable=True)
     center_lng = Column(DECIMAL(9, 6), nullable=True)
 
-    # ✅ UPDATED: zone boundary polygon
+    # Updated: zone boundary stored as a polygon (PostGIS geometry)
     boundary = Column(Geometry(geometry_type="POLYGON", srid=4326), nullable=True)
 
     created_by = Column(VARCHAR(20), nullable=False, server_default="admin")

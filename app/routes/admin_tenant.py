@@ -16,9 +16,7 @@ from app.schemas.admin_tenant import  TenantCountryCreateRequest, TenantCountryR
 router = APIRouter(prefix="/admin", tags=["Admin Tenant Setup"])
 
 
-# =========================================================
 # 1) CREATE TENANT
-# =========================================================
 @router.post(
     "/tenants",
     response_model=TenantResponse,
@@ -46,9 +44,7 @@ def create_tenant(payload: TenantCreateRequest, db: Session = Depends(get_db)):
     return tenant
 
 
-# =========================================================
 # 2) LIST TENANTS
-# =========================================================
 @router.get(
     "/tenants",
     response_model=List[TenantResponse],
@@ -59,9 +55,7 @@ def list_tenants(db: Session = Depends(get_db)):
     return tenants
 
 
-# =========================================================
 # 3) ADD COUNTRY TO TENANT
-# =========================================================
 @router.post(
     "/tenants/{tenant_id}/countries",
     response_model=TenantCountryResponse,
@@ -105,9 +99,7 @@ def add_country_to_tenant(
     return tenant_country
 
 
-# =========================================================
 # 4) LIST TENANT COUNTRIES
-# =========================================================
 @router.get(
     "/tenants/{tenant_id}/countries",
     response_model=List[TenantCountryResponse],

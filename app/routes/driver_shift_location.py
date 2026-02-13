@@ -32,9 +32,7 @@ from app.models.user_session import UserSession
 router = APIRouter(prefix="/drivers", tags=["Driver Shift & Location"])
 
 
-# =========================================================
-# 🔧 TIME HELPERS
-# =========================================================
+# Time helpers
 
 def compute_expected_end_at(
     start_time: time,
@@ -48,7 +46,7 @@ def compute_expected_end_at(
     today = now.date()
     end_dt = datetime.combine(today, end_time, tzinfo=now.tzinfo)
 
-    # Overnight shift (e.g. 22:00 → 06:00)
+    # Overnight shift (e.g. 22:00 to 06:00)
     if end_time <= start_time:
         end_dt += timedelta(days=1)
 
@@ -71,9 +69,7 @@ def is_now_within_assignment(
         return now_time >= start_time or now_time <= end_time
 
 
-# =========================================================
-# ✅ Auto end shift if expected_end_at passed
-# =========================================================
+# Auto end shift if expected_end_at passed
 def auto_end_shift_if_required(
     db: Session,
     shift: DriverShift,
@@ -92,9 +88,7 @@ def auto_end_shift_if_required(
     return False
 
 
-# =========================================================
-# ✅ 1) Start Shift (Go ONLINE)
-# =========================================================
+# 1) Start shift (go ONLINE)
 @router.post(
     "/shifts/start",
     response_model=DriverShiftResponse,
@@ -105,7 +99,7 @@ def start_driver_shift(
     db: Session = Depends(get_db),
     session: UserSession = Depends(require_role(TenantRoleEnum.DRIVER))
 ):
-    # 🔐 enforce ownership
+    # Enforce ownership
     if payload.driver_id != session.user_id:
         raise HTTPException(status_code=403, detail="Unauthorized driver")
 
@@ -205,9 +199,7 @@ def start_driver_shift(
     return shift
 
 
-# =========================================================
-# ✅ 2) Update Location
-# =========================================================
+# 2) Update location
 @router.post(
     "/location/update",
     response_model=DriverLocationResponse,
@@ -239,7 +231,7 @@ def update_driver_location(
             detail="Driver is not ONLINE"
         )
 
-    # Auto end shift
+    # Auto end shift if required
     active_trip = db.execute(
         select(Trip).where(
             and_(
@@ -288,9 +280,7 @@ def update_driver_location(
     return loc
 
 
-# =========================================================
-# ✅ 3) End Shift Manually
-# =========================================================
+# 3) End shift manually
 @router.post(
     "/shifts/end",
     status_code=status.HTTP_200_OK
@@ -328,9 +318,7 @@ def end_driver_shift(
     return {"message": "Shift ended successfully"}
 
 
-# =========================================================
-# ✅ 4) Get Current Shift
-# =========================================================
+# 4) Get current shift
 @router.get(
     "/shift/current",
     response_model=DriverShiftResponse

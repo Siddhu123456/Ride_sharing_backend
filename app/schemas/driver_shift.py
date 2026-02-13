@@ -22,7 +22,7 @@ class DriverShiftResponse(BaseModel):
     tenant_id: int
     vehicle_id: Optional[int]
 
-    status: DriverShiftStatusEnum   # 🔥 changed
+    status: DriverShiftStatusEnum   # Current status of the driver shift
     started_at: datetime
     ended_at: Optional[datetime]
     expected_end_at: Optional[datetime]

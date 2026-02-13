@@ -35,7 +35,7 @@ from app.routes.rider_trip_routes import router as rider_trip_router
 
 from app.routes.fleet_overview_routes import router as fleet_overview_router
 
-# ✅ NEW ROUTES
+# New routes
 from app.routes.driver_profile_routes import router as driver_profile_router
 from app.routes.driver_vehicle_routes import router as driver_vehicle_router
 from app.routes.driver_trip_routes import router as driver_trip_router
@@ -65,9 +65,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# =========================
 # AUTH / MASTER DATA
-# =========================
 app.include_router(auth.router)
 app.include_router(country.router)
 app.include_router(admin_tenant.router)
@@ -75,9 +73,7 @@ app.include_router(tenant_admin_router)
 app.include_router(admin_tax_router)
 app.include_router(tenant_admin_setup_router)
 
-# =========================
 # FLEET & VEHICLE
-# =========================
 app.include_router(fleet_owner_router)
 app.include_router(tenant_admin_fleet_router)
 app.include_router(fleet_owner_driver_router)
@@ -91,18 +87,14 @@ app.include_router(wallet_router)
 app.include_router(fleet_settlement_router)
 app.include_router(tenant_settlement_router)
 
-# =========================
 # DRIVER
-# =========================
 app.include_router(driver_profile_router)          # NEW
 app.include_router(driver_vehicle_router)          # NEW
 app.include_router(driver_shift_location_router)
 app.include_router(driver_offer_router)
 app.include_router(driver_trip_router)              # NEW
 app.include_router(driver_dashboard_router)          # NEW
-# =========================
 # TRIPS
-# =========================
 app.include_router(trip_fare_router)
 app.include_router(trip_router)
 app.include_router(trip_navigation_router)          # NEW
@@ -113,9 +105,7 @@ app.include_router(lifecycle_router)
 app.include_router(rider_router)
 app.include_router(rider_trip_router)
 
-# =========================
 # STATIC FILES
-# =========================
 os.makedirs("uploads", exist_ok=True)
 app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
 

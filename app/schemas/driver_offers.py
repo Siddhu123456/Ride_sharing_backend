@@ -16,7 +16,7 @@ class DriverOfferResponse(BaseModel):
     drop_lng: float
     drop_address: str
 
-    distance_km: float   # ✅ NEW
+    distance_km: float   # Distance in kilometers (new field)
     fare_amount: float
 
     sent_at: datetime

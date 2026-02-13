@@ -42,7 +42,7 @@ def auto_approve_driver_if_ready(db: Session, driver_id: int):
     if not (all_uploaded and all_approved and approved_by_same_admin):
         return False
 
-    # ✅ approve driver profile
+    # Approve driver profile
     profile = db.execute(
         select(DriverProfile).where(DriverProfile.driver_id == driver_id)
     ).scalar_one_or_none()
@@ -51,7 +51,7 @@ def auto_approve_driver_if_ready(db: Session, driver_id: int):
         profile.approval_status = ApprovalStatusEnum.APPROVED
         profile.updated_on = datetime.now(timezone.utc)
 
-    # ✅ approve fleet_driver mapping
+    # Approve fleet-driver mapping
     fleet_driver = db.execute(
         select(FleetDriver).where(
             and_(

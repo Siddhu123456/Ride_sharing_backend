@@ -68,7 +68,7 @@ def list_pending_drivers(
 
 
 
-# 2) GET DRIVER DOCUMENTS (like fleet documents)
+# Get driver documents (similar to fleet documents)
 @router.get("/{driver_id}/documents", response_model=List[DriverDocumentResponse])
 def get_driver_documents(
     driver_id: int,
@@ -82,7 +82,7 @@ def get_driver_documents(
     if not tenant_admin:
         raise HTTPException(status_code=403, detail="Not a tenant admin")
 
-    # ensure driver belongs to same tenant
+    # Ensure the driver belongs to the same tenant
     driver_profile = db.execute(
         select(DriverProfile).where(DriverProfile.driver_id == driver_id)
     ).scalar_one_or_none()
@@ -127,11 +127,11 @@ def verify_driver_document(
     if not profile:
         raise HTTPException(status_code=400, detail="Driver profile not created")
 
-    # ✅ tenant restriction
+    # Check tenant restriction
     if profile.tenant_id != tenant_admin.tenant_id:
         raise HTTPException(status_code=403, detail="Not allowed for this tenant")
 
-    # ✅ must upload all docs before verification
+    # Ensure all required documents are uploaded before verification
     uploaded_docs = get_uploaded_driver_docs(db, doc.driver_id)
     missing, all_uploaded, _, _ = compute_driver_doc_status(uploaded_docs)
 
@@ -141,7 +141,7 @@ def verify_driver_document(
             detail=f"All required docs must be uploaded before verification. Missing: {missing}"
         )
 
-    # ✅ same tenant admin rule
+    # Enforce same tenant admin rule for verification
     already_started_by_other_admin = any(
         d.verified_by is not None and d.verified_by != session.user_id
         for d in uploaded_docs

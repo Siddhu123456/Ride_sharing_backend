@@ -2,7 +2,7 @@ import os
 from fastapi import Header, HTTPException
 from dotenv import load_dotenv
 
-load_dotenv()  # ✅ make sure .env loads
+load_dotenv()  # Load environment variables from .env
 
 SUPER_ADMIN_KEY = os.getenv("SUPER_ADMIN_KEY")
 

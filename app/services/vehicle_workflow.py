@@ -35,7 +35,7 @@ def auto_approve_vehicle_if_ready(db: Session, vehicle: Vehicle):
     if not (all_uploaded and all_approved and approved_by_same_admin):
         return False
 
-    # ✅ vehicle approved
+    # Mark vehicle as approved
     vehicle.approval_status = ApprovalStatusEnum.APPROVED
     vehicle.status = VehicleStatusEnum.ACTIVE
     vehicle.verified_by = docs[0].verified_by

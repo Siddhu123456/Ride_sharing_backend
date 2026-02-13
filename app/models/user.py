@@ -21,8 +21,8 @@ class AppUser(Base):
     full_name = Column(String, nullable=False)
     gender = Column(String, nullable=False)  # or Enum later
     phone = Column(String, unique=True, nullable=False, index=True)
-    email = Column(String, unique=True, nullable=False)  # ✅ NOT NULL now
-    country_code = Column(String(2), ForeignKey("country.country_code"), nullable=False)  # ✅ added
+    email = Column(String, unique=True, nullable=False)  # Email is required (NOT NULL)
+    country_code = Column(String(2), ForeignKey("country.country_code"), nullable=False)  # Country code column added and required
     status = Column(String, default="ACTIVE")
     created_on = Column(
         TIMESTAMP(timezone=True),

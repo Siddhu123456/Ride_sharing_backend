@@ -11,7 +11,7 @@ def generate_otp_code() -> str:
 
 
 def create_trip_otp(db: Session, trip_id: int, ttl_minutes: int = 5) -> TripOtp:
-    # ✅ if OTP already exists and not expired, reuse (optional)
+    # If an unexpired OTP already exists and is not verified, reuse it (optional)
     existing = db.execute(
         select(TripOtp).where(TripOtp.trip_id == trip_id)
     ).scalar_one_or_none()

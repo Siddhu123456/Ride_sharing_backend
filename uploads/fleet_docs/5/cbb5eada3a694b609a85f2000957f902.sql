@@ -1,10 +1,10 @@
 -- UUID generator for user_session.session_id
 CREATE EXTENSION IF NOT EXISTS pgcrypto;
 
--- ✅ Geo support
+-- Geo support (PostGIS)
 CREATE EXTENSION IF NOT EXISTS postgis;
 
--- ✅ For overlap exclusion constraint (already used)
+-- Extension used for overlap exclusion constraints
 CREATE EXTENSION IF NOT EXISTS btree_gist;
 
 
@@ -110,7 +110,7 @@ CREATE TABLE city (
     timezone VARCHAR(50) NOT NULL,
     currency CHAR(3) NOT NULL,
 
-    -- ✅ NEW: City Boundary Polygon
+    -- New: City boundary stored as a polygon
     boundary geometry(POLYGON, 4326),
 
     created_by VARCHAR(20) NOT NULL DEFAULT 'admin',
@@ -130,7 +130,7 @@ CREATE TABLE zone (
     center_lat DECIMAL(9,6),
     center_lng DECIMAL(9,6),
 
-    -- ✅ UPDATED to PostGIS polygon
+    -- Updated: boundary stored as a PostGIS polygon
     boundary geometry(POLYGON, 4326),
 
     created_by VARCHAR(20) NOT NULL DEFAULT 'admin',

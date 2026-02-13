@@ -34,9 +34,7 @@ def driver_dashboard_summary(
     driver_id = session.user_id
     today = date.today()
 
-    # =====================================================
-    # 1️⃣ Current shift (SAFE)
-    # =====================================================
+    # 1) Current shift (safe)
     shift = db.execute(
         select(DriverShift)
         .where(
@@ -46,9 +44,7 @@ def driver_dashboard_summary(
         .order_by(DriverShift.started_at.desc())
     ).scalars().first()
 
-    # =====================================================
-    # 2️⃣ Driver profile → Tenant
-    # =====================================================
+    # 2) Driver profile -> tenant
     driver_profile = db.execute(
         select(DriverProfile)
         .where(DriverProfile.driver_id == driver_id)
@@ -61,9 +57,7 @@ def driver_dashboard_summary(
             .where(Tenant.tenant_id == driver_profile.tenant_id)
         ).scalar_one_or_none()
 
-    # =====================================================
-    # 3️⃣ Fleet (current active assignment)
-    # =====================================================
+    # 3) Fleet (current active assignment)
     fleet = db.execute(
         select(Fleet)
         .join(FleetDriver, FleetDriver.fleet_id == Fleet.fleet_id)
@@ -75,9 +69,7 @@ def driver_dashboard_summary(
         .order_by(FleetDriver.start_date.desc())
     ).scalars().first()
 
-    # =====================================================
-    # 4️⃣ Today's trip stats
-    # =====================================================
+    # 4) Today's trip stats
     trip_count, earnings = db.execute(
         select(
             func.count(Trip.trip_id),
@@ -92,9 +84,7 @@ def driver_dashboard_summary(
         )
     ).one()
 
-    # =====================================================
-    # 5️⃣ Build typed response (NO dicts)
-    # =====================================================
+    # 5) Build typed response (no dicts)
     return DriverDashboardSummaryResponse(
         driver_id=driver_id,
 

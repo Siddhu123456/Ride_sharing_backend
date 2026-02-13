@@ -263,7 +263,7 @@ def get_city_fare_configs(
 
 @router.put(
     "/{tenant_id}/fare-config/{fare_config_id}",
-    response_model=CityWithFareResponse
+    response_model=FareConfigResponse
 )
 def update_fare_config(
     tenant_id: int,
@@ -275,41 +275,41 @@ def update_fare_config(
     if tenant_admin.tenant_id != tenant_id:
         raise HTTPException(403, "Not allowed")
 
-    fare = db.execute(
+    fare_config = db.execute(
         select(FareConfig).where(
             FareConfig.fare_config_id == fare_config_id,
             FareConfig.tenant_id == tenant_id
         )
     ).scalar_one_or_none()
 
-    if not fare:
+    if not fare_config:
         raise HTTPException(404, "Fare config not found")
 
     # Update only provided fields
     if payload.base_fare is not None:
-        fare.base_fare = payload.base_fare
+        fare_config.base_fare = payload.base_fare
 
     if payload.per_km_rate is not None:
-        fare.per_km_rate = payload.per_km_rate
+        fare_config.per_km_rate = payload.per_km_rate
 
     if payload.per_min_rate is not None:
-        fare.per_min_rate = payload.per_min_rate
+        fare_config.per_min_rate = payload.per_min_rate
 
     if payload.minimum_fare is not None:
-        fare.minimum_fare = payload.minimum_fare
+        fare_config.minimum_fare = payload.minimum_fare
 
     if payload.platform_commission_percent is not None:
         if payload.platform_commission_percent < 0 or payload.platform_commission_percent > 100:
             raise HTTPException(400, "Invalid commission percentage")
-        fare.platform_commission_percent = payload.platform_commission_percent
+        fare_config.platform_commission_percent = payload.platform_commission_percent
 
     if payload.is_active is not None:
-        fare.is_active = payload.is_active
+        fare_config.is_active = payload.is_active
 
     db.commit()
-    db.refresh(fare)
+    db.refresh(fare_config)
 
-    return fare
+    return fare_config
 
 
 @router.get(

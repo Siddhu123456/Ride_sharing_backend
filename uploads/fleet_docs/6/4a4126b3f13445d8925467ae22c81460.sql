@@ -269,7 +269,7 @@ CREATE TABLE fleet_document (
     created_by BIGINT REFERENCES app_user(user_id),
     created_on TIMESTAMPTZ NOT NULL DEFAULT now(),
 
-    -- ✅ Only 1 document per type per fleet
+    -- Only one document per type is allowed per fleet
     CONSTRAINT uq_fleet_document_type_per_fleet UNIQUE (fleet_id, document_type)
 );
 

@@ -16,11 +16,10 @@ def get_tenant_admin(
     session: UserSession = Depends(require_role(TenantRoleEnum.TENANT_ADMIN))
 ) -> TenantAdmin:
     """
-    ✅ Ensures:
+    Ensures that:
     - JWT is valid
     - active_role is TENANT_ADMIN
-    - TenantAdmin record exists
-    - TenantAdmin is active
+    - TenantAdmin record exists and is active
     """
 
     tenant_admin = db.execute(

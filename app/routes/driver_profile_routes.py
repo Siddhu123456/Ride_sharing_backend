@@ -32,8 +32,8 @@ def get_driver_profile(
         "driver_id": user.user_id,
         "full_name": user.full_name,
         "phone": user.phone,
-        "driver_type": profile.driver_type,      # ✅ now expected
-        "rating": float(profile.rating),          # ✅ Numeric → float
+    "driver_type": profile.driver_type,      # Driver type included in response
+    "rating": float(profile.rating),          # Rating converted to float
         "approval_status": profile.approval_status
     }
 

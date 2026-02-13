@@ -17,9 +17,7 @@ from app.schemas.enums import (
 )
 
 
-# =========================================================
-# ✅ Find eligible drivers for a trip
-# =========================================================
+# Find eligible drivers for a trip
 def find_eligible_driver_ids(db: Session, trip: Trip) -> list[int]:
     stmt = (
         select(DriverShift.driver_id)
@@ -44,7 +42,7 @@ def find_eligible_driver_ids(db: Session, trip: Trip) -> list[int]:
             Vehicle.status == VehicleStatusEnum.ACTIVE,
             Vehicle.category == trip.vehicle_category,
 
-            # ✅ PostGIS city containment check
+            # PostGIS city containment check
             func.ST_Contains(
                 City.boundary,
                 func.ST_SetSRID(
@@ -62,9 +60,7 @@ def find_eligible_driver_ids(db: Session, trip: Trip) -> list[int]:
     return db.execute(stmt).scalars().all()
 
 
-# =========================================================
-# ✅ Create first dispatch attempt
-# =========================================================
+# Create first dispatch attempt
 def create_first_offer(
     db: Session,
     trip: Trip,
@@ -86,9 +82,7 @@ def create_first_offer(
     return attempt
 
 
-# =========================================================
-# ✅ Send next driver offer
-# =========================================================
+# Send next driver offer
 def send_next_offer(
     db: Session,
     trip: Trip,
@@ -120,9 +114,7 @@ def send_next_offer(
     return None
 
 
-# =========================================================
-# ✅ Assign trip after ACCEPT
-# =========================================================
+# Assign trip after accept
 def assign_trip(
     db: Session,
     trip: Trip,

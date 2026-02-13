@@ -15,7 +15,7 @@ class FleetDocument(Base):
         index=True
     )
 
-    # ✅ ENUM document type (Postgres enum name must match)
+    # Document type is stored as a Postgres ENUM (name must match)
     document_type = Column(
         Enum(FleetDocumentTypeEnum, name="fleet_document_type_enum"),
         nullable=False

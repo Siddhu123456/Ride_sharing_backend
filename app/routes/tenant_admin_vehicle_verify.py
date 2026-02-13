@@ -76,7 +76,7 @@ def get_vehicle_documents(
     return docs
 
 
-# ✅ Verify vehicle document
+# Verify the vehicle document
 @router.post("/documents/{document_id}/verify", status_code=200)
 def verify_vehicle_document(
     document_id: int,
@@ -102,7 +102,7 @@ def verify_vehicle_document(
     if vehicle.tenant_id != tenant_admin.tenant_id:
         raise HTTPException(status_code=403, detail="Not allowed for this tenant")
 
-    # ✅ must upload both docs before verification
+    # Ensure all required vehicle documents are uploaded before verification
     docs = get_vehicle_docs(db, vehicle.vehicle_id)
     missing, all_uploaded, _, _ = compute_vehicle_doc_status(docs)
 
@@ -112,7 +112,7 @@ def verify_vehicle_document(
             detail=f"All required vehicle documents must be uploaded before verification. Missing: {missing}"
         )
 
-    # ✅ same tenant admin rule
+    # Enforce same tenant admin rule for verification
     started_by_other_admin = any(
         d.verified_by is not None and d.verified_by != session.user_id
         for d in docs
@@ -123,7 +123,7 @@ def verify_vehicle_document(
             detail="Another tenant admin started verification. Same admin must approve all docs."
         )
 
-    # ✅ verify doc
+    # Verify this document (approve or reject)
     doc.verification_status = ApprovalStatusEnum.APPROVED if payload.approve else ApprovalStatusEnum.REJECTED
     doc.verified_by = session.user_id
     doc.verified_on = datetime.now(timezone.utc)

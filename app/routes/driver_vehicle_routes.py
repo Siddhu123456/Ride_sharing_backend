@@ -47,7 +47,7 @@ def get_current_vehicle_assignment(
 
     now_time = datetime.now(timezone.utc).time()
 
-    # ✅ Check if assignment is currently active
+    # Check whether the assignment is currently active
     is_active = (
         assignment.start_time <= now_time and
         (assignment.end_time is None or now_time <= assignment.end_time)

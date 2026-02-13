@@ -14,7 +14,7 @@ router = APIRouter(prefix="/admin/tenants", tags=["Admin Tenant Tax Rules"])
 
 
 @router.post(
-    "/{tenant_id}/tax-rules",   # ✅ FIXED PATH
+    "/{tenant_id}/tax-rules",   # Fixed path for tenant tax rules
     response_model=TenantTaxRuleResponse,
     status_code=status.HTTP_201_CREATED,
     dependencies=[Depends(verify_admin)]
@@ -24,7 +24,7 @@ def add_tenant_tax_rule(
     payload: TenantTaxRuleCreateRequest,
     db: Session = Depends(get_db),
 ):
-    # ✅ 1) Validate Tenant
+    # 1) Validate tenant exists
     tenant = db.execute(
         select(Tenant).where(Tenant.tenant_id == tenant_id)
     ).scalar_one_or_none()
@@ -32,7 +32,7 @@ def add_tenant_tax_rule(
     if not tenant:
         raise HTTPException(status_code=404, detail="Tenant not found")
 
-    # ✅ 2) Validate Country
+    # 2) Validate country exists
     country = db.execute(
         select(Country).where(Country.country_code == payload.country_code)
     ).scalar_one_or_none()
@@ -40,14 +40,14 @@ def add_tenant_tax_rule(
     if not country:
         raise HTTPException(status_code=404, detail="Country not found")
 
-    # ✅ 3) Validate date logic
+    # 3) Validate date logic
     if payload.effective_to is not None and payload.effective_to <= payload.effective_from:
         raise HTTPException(
             status_code=400,
             detail="effective_to must be greater than effective_from"
         )
 
-    # ✅ 4) Overlap Check
+    # 4) Overlap check for existing rules
     query = select(TenantTaxRule).where(
         TenantTaxRule.tenant_id == tenant_id,
         TenantTaxRule.country_code == payload.country_code
@@ -79,7 +79,7 @@ def add_tenant_tax_rule(
             detail="A conflicting tax rule already exists for this date range"
         )
 
-    # ✅ 5) Insert New Tax Rule (use correct column names)
+    # 5) Insert new tax rule (ensure correct column names)
     new_rule = TenantTaxRule(
         tenant_id=tenant_id,
         country_code=payload.country_code,

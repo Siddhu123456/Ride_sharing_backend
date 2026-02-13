@@ -22,7 +22,7 @@ from app.schemas.fleet_overview import (
 router = APIRouter(prefix="/fleet-owner", tags=["Fleet Owner - Overview"])
 
 
-# ✅ Get all vehicles in fleet
+# Get all vehicles in the fleet
 @router.get("/fleets/{fleet_id}/vehicles", response_model=list[FleetVehicleResponse])
 def get_fleet_vehicles(
     fleet_id: int,
@@ -43,7 +43,7 @@ def get_fleet_vehicles(
     return vehicles
 
 
-# ✅ Get all drivers in fleet
+# Get all drivers in the fleet
 @router.get("/fleets/{fleet_id}/drivers", response_model=list[FleetDriverResponse])
 def get_fleet_drivers(
     fleet_id: int,
@@ -71,7 +71,7 @@ def get_fleet_drivers(
         .where(
             and_(
                 FleetDriver.fleet_id == fleet_id,
-                FleetDriver.end_date.is_(None)  # ✅ current active drivers only
+                FleetDriver.end_date.is_(None)  # Current active drivers only
             )
         )
     ).all()
@@ -91,7 +91,7 @@ def get_fleet_drivers(
     return drivers
 
 
-# ✅ Get vehicle-driver assignments (history + current)
+# Get vehicle-driver assignments (history and current)
 @router.get(
     "/fleets/{fleet_id}/assignments",
     response_model=list[VehicleDriverAssignmentResponse]
@@ -118,7 +118,7 @@ def get_fleet_vehicle_driver_assignments(
     return assignments
 
 
-# ✅ Get current assignment of a vehicle (if any)
+# Get current assignment for a vehicle (if any)
 @router.get(
     "/vehicles/{vehicle_id}/current-assignment",
     response_model=VehicleDriverAssignmentResponse | None

@@ -155,7 +155,7 @@ def get_rider_statistics(
     total_rides = result[0]
     total_spent = float(result[1])
 
-    # Distance not implemented yet → keep future-ready
+    # Distance not implemented yet; placeholder for future use
     distance_traveled_km = 0.0
 
     return RiderStatisticsResponse(

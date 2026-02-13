@@ -20,13 +20,16 @@ from app.schemas.enums import (
     SettlementStatusEnum
 )
 from app.schemas.fleet_settlement import (
+    FleetSettlementHistoryItem,
     FleetSettlementResponse,
-    FleetSettlementPayResponse
+    FleetSettlementPayResponse,
+    SettlementTransactionItem,
+    SettlementTripItem
 )
 from app.models.user_session import UserSession
 
 router = APIRouter(
-    prefix="/fleet/settlements",
+    prefix="/fleet-owner/settlements",
     tags=["Fleet - Commission Settlement"]
 )
 
@@ -161,3 +164,127 @@ def pay_commission_settlement(
         status=settlement.status,
         paid_on=settlement.paid_on
     )
+
+
+@router.get(
+    "/{settlement_id}/trips",
+    response_model=list[SettlementTripItem]
+)
+def get_settlement_trips(
+    settlement_id: int,
+    db: Session = Depends(get_db),
+    session: UserSession = Depends(
+        require_role(TenantRoleEnum.FLEET_OWNER)
+    )
+):
+    fleet = db.execute(
+        select(Fleet).where(Fleet.owner_user_id == session.user_id)
+    ).scalar_one_or_none()
+
+    if not fleet:
+        raise HTTPException(403, "Fleet not found")
+
+    settlement = db.execute(
+        select(CommissionSettlement)
+        .where(
+            CommissionSettlement.settlement_id == settlement_id,
+            CommissionSettlement.fleet_id == fleet.fleet_id
+        )
+    ).scalar_one_or_none()
+
+    if not settlement:
+        raise HTTPException(404, "Settlement not found")
+
+    trips = db.execute(
+        select(CommissionSettlementTrip)
+        .where(CommissionSettlementTrip.settlement_id == settlement_id)
+    ).scalars().all()
+
+    return trips
+
+
+@router.get(
+    "/{settlement_id}/transactions",
+    response_model=list[SettlementTransactionItem]
+)
+def get_settlement_transactions(
+    settlement_id: int,
+    db: Session = Depends(get_db),
+    session: UserSession = Depends(
+        require_role(TenantRoleEnum.FLEET_OWNER)
+    )
+):
+    fleet = db.execute(
+        select(Fleet).where(Fleet.owner_user_id == session.user_id)
+    ).scalar_one_or_none()
+
+    if not fleet:
+        raise HTTPException(403, "Fleet not found")
+
+    settlement = db.execute(
+        select(CommissionSettlement)
+        .where(
+            CommissionSettlement.settlement_id == settlement_id,
+            CommissionSettlement.fleet_id == fleet.fleet_id
+        )
+    ).scalar_one_or_none()
+
+    if not settlement:
+        raise HTTPException(404, "Settlement not found")
+
+    fleet_wallet = db.execute(
+        select(Wallet).where(
+            Wallet.owner_type == WalletOwnerEnum.FLEET_OWNER,
+            Wallet.owner_id == fleet.fleet_id
+        )
+    ).scalar_one()
+
+    tenant_wallet = db.execute(
+        select(Wallet).where(
+            Wallet.owner_type == WalletOwnerEnum.TENANT,
+            Wallet.owner_id == settlement.tenant_id
+        )
+    ).scalar_one()
+
+    txs = db.execute(
+        select(WalletTransaction)
+        .where(
+            WalletTransaction.reason == WalletTxnReasonEnum.COMMISSION_SETTLED,
+            WalletTransaction.amount == settlement.total_commission,
+            WalletTransaction.wallet_id.in_([
+                fleet_wallet.wallet_id,
+                tenant_wallet.wallet_id
+            ])
+        )
+        .order_by(WalletTransaction.created_on.desc())
+    ).scalars().all()
+
+    return txs
+
+
+@router.get(
+    "/history",
+    response_model=list[FleetSettlementHistoryItem]
+)
+def get_settlement_history(
+    db: Session = Depends(get_db),
+    session: UserSession = Depends(
+        require_role(TenantRoleEnum.FLEET_OWNER)
+    )
+):
+    fleet = db.execute(
+        select(Fleet).where(Fleet.owner_user_id == session.user_id)
+    ).scalar_one_or_none()
+
+    if not fleet:
+        raise HTTPException(403, "Fleet not found")
+
+    settlements = db.execute(
+        select(CommissionSettlement)
+        .where(CommissionSettlement.fleet_id == fleet.fleet_id)
+        .order_by(CommissionSettlement.created_on.desc())
+    ).scalars().all()
+    
+    print('The settlements:', settlements)
+
+    return settlements
