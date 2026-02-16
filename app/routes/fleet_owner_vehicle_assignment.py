@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from sqlalchemy import select, and_, or_
 from starlette import status
+from datetime import datetime
 
 from app.core.database import get_db
 from app.core.role_guard import require_role
@@ -12,7 +13,8 @@ from app.models.user import AppUser
 from app.models.user_session import UserSession
 from app.models.vehicle import Vehicle
 from app.models.driver_vehicle_assignment import DriverVehicleAssignment
-from app.schemas.enums import TenantRoleEnum
+from app.schemas.driver_vehicle import ChangeVehicleDriverRequest, DriverVehicleAssignmentResponse
+from app.schemas.enums import ApprovalStatusEnum, TenantRoleEnum
 
 from app.schemas.fleet_vehicle_assignment import (
     FleetAssignDriverToVehicleRequest,
@@ -198,4 +200,161 @@ def assign_fleet_driver_to_vehicle(
         vehicle_id=assignment.vehicle_id,
         start_time=assignment.start_time,
         end_time=assignment.end_time
+    )
+
+
+@router.get(
+    "/{vehicle_id}/driver",
+    response_model=DriverVehicleAssignmentResponse
+)
+def get_current_driver(
+    vehicle_id: int,
+    db: Session = Depends(get_db),
+    session: UserSession = Depends(
+        require_role(TenantRoleEnum.FLEET_OWNER)
+    )
+):
+    # Fleet owned by user
+    fleet = db.execute(
+        select(Fleet).where(Fleet.owner_user_id == session.user_id)
+    ).scalar_one_or_none()
+
+    if not fleet:
+        raise HTTPException(403, "Fleet not found")
+
+    # Validate vehicle belongs to fleet
+    vehicle = db.execute(
+        select(Vehicle).where(
+            Vehicle.vehicle_id == vehicle_id,
+            Vehicle.fleet_id == fleet.fleet_id
+        )
+    ).scalar_one_or_none()
+
+    if not vehicle:
+        raise HTTPException(404, "Vehicle not found")
+
+    now = datetime.now().time()
+
+    assignment = db.execute(
+        select(DriverVehicleAssignment)
+        .where(
+            DriverVehicleAssignment.vehicle_id == vehicle_id,
+            DriverVehicleAssignment.is_active == True,
+            DriverVehicleAssignment.start_time <= now,
+            DriverVehicleAssignment.end_time >= now
+        )
+        .order_by(DriverVehicleAssignment.created_on.desc())
+    ).scalar_one_or_none()
+
+    if not assignment:
+        return DriverVehicleAssignmentResponse(
+            vehicle_id=vehicle_id,
+            driver_id=None,
+            driver_name=None,
+            start_time=None,
+            end_time=None,
+            is_active=False,
+            created_on=None
+        )
+
+    driver = db.execute(
+        select(AppUser).where(
+            AppUser.user_id == assignment.driver_id
+        )
+    ).scalar_one_or_none()
+
+    return DriverVehicleAssignmentResponse(
+        vehicle_id=vehicle_id,
+        driver_id=assignment.driver_id,
+        driver_name=driver.full_name if driver else None,
+        start_time=assignment.start_time,
+        end_time=assignment.end_time,
+        is_active=assignment.is_active,
+        created_on=assignment.created_on
+    )
+
+
+@router.put(
+    "/{vehicle_id}/driver",
+    response_model=DriverVehicleAssignmentResponse
+)
+def change_driver(
+    vehicle_id: int,
+    payload: ChangeVehicleDriverRequest,
+    db: Session = Depends(get_db),
+    session: UserSession = Depends(
+        require_role(TenantRoleEnum.FLEET_OWNER)
+    )
+):
+    fleet = db.execute(
+        select(Fleet).where(Fleet.owner_user_id == session.user_id)
+    ).scalar_one_or_none()
+
+    if not fleet:
+        raise HTTPException(403, "Fleet not found")
+
+    vehicle = db.execute(
+        select(Vehicle).where(
+            Vehicle.vehicle_id == vehicle_id,
+            Vehicle.fleet_id == fleet.fleet_id
+        )
+    ).scalar_one_or_none()
+
+    if not vehicle:
+        raise HTTPException(404, "Vehicle not found")
+
+    # Validate driver belongs to fleet & approved
+    fleet_driver = db.execute(
+        select(FleetDriver).where(
+            FleetDriver.driver_id == payload.driver_id,
+            FleetDriver.fleet_id == fleet.fleet_id,
+            FleetDriver.approval_status == ApprovalStatusEnum.APPROVED,
+            FleetDriver.end_date.is_(None)
+        )
+    ).scalar_one_or_none()
+
+    if not fleet_driver:
+        raise HTTPException(
+            400,
+            "Driver not approved or not part of fleet"
+        )
+
+    # Deactivate existing assignments
+    existing_assignments = db.execute(
+        select(DriverVehicleAssignment).where(
+            DriverVehicleAssignment.vehicle_id == vehicle_id,
+            DriverVehicleAssignment.is_active == True
+        )
+    ).scalars().all()
+
+    for a in existing_assignments:
+        a.is_active = False
+
+    # Create new assignment
+    new_assignment = DriverVehicleAssignment(
+        driver_id=payload.driver_id,
+        vehicle_id=vehicle_id,
+        start_time=payload.start_time,
+        end_time=payload.end_time,
+        created_by=session.user_id
+    )
+
+    db.add(new_assignment)
+    db.commit()
+    db.refresh(new_assignment)
+
+    driver = db.execute(
+        select(AppUser).where(
+            AppUser.user_id == payload.driver_id
+        )
+    ).scalar_one_or_none()
+
+    return DriverVehicleAssignmentResponse(
+        vehicle_id=vehicle_id,
+        driver_id=payload.driver_id,
+        driver_name=driver.full_name if driver else None,
+        start_time=new_assignment.start_time,
+        end_time=new_assignment.end_time,
+        is_active=new_assignment.is_active,
+        created_on=new_assignment.created_on
     )
