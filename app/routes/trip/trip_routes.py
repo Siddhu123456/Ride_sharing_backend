@@ -1,0 +1,57 @@
+from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy.orm import Session
+from starlette import status
+
+from app.core.database import get_db
+from app.core.role_guard import require_role
+
+from app.schemas.enums import TenantRoleEnum
+from app.models.trip.trip import Trip
+from app.models.common.user_session import UserSession
+
+from app.schemas.trip import TripRequestCreate, TripResponse
+from app.services.trip.tenant_city_service import tenant_operates_in_city
+from app.services.trip.dispatch_service import create_first_offer
+
+router = APIRouter(prefix="/trips", tags=["Trips"])
+
+
+@router.post("/request", response_model=TripResponse, status_code=201)
+def request_trip(
+    payload: TripRequestCreate,
+    db: Session = Depends(get_db),
+    session: UserSession = Depends(require_role(TenantRoleEnum.RIDER))
+):
+    if not tenant_operates_in_city(db, payload.tenant_id, payload.city_id):
+        raise HTTPException(403, "Tenant not operating in this city")
+
+    trip = Trip(
+        tenant_id=payload.tenant_id,
+        rider_id=session.user_id,
+        city_id=payload.city_id,
+
+        pickup_lat=payload.pickup_lat,
+        pickup_lng=payload.pickup_lng,
+        pickup_address=payload.pickup_address,
+
+        drop_lat=payload.drop_lat,
+        drop_lng=payload.drop_lng,
+        drop_address=payload.drop_address,
+
+        vehicle_category=payload.vehicle_category,
+        fare_amount=payload.fare_amount,
+
+        created_by=session.user_id
+    )
+
+    db.add(trip)
+    db.commit()
+    db.refresh(trip)
+
+    create_first_offer(db, trip, session.user_id)
+    db.commit()
+
+    return trip
+
+
+

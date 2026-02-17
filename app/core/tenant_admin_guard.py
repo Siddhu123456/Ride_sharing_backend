@@ -7,8 +7,8 @@ from sqlalchemy import select, and_
 from app.core.database import get_db
 from app.core.role_guard import require_role
 from app.schemas.enums import TenantRoleEnum
-from app.models.user_session import UserSession
-from app.models.tenant_admin import TenantAdmin
+from app.models.common.user_session import UserSession
+from app.models.tenant.tenant_admin import TenantAdmin
 
 
 def get_tenant_admin(

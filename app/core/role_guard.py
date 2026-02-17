@@ -2,7 +2,7 @@ from fastapi import Depends, HTTPException
 from starlette import status
 
 from app.core.deps import get_current_user_session
-from app.models.user_session import UserSession
+from app.models.common.user_session import UserSession
 from app.schemas.enums import TenantRoleEnum  # your enum name
 
 

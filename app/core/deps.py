@@ -5,7 +5,7 @@ from sqlalchemy import select
 from starlette import status
 
 from app.core.database import get_db
-from app.models.user_session import UserSession
+from app.models.common.user_session import UserSession
 from app.utils.jwt import decode_access_token
 
 security = HTTPBearer()
