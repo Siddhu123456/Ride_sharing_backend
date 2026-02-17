@@ -1,10 +1,25 @@
+from pydantic import BaseModel
+from typing import Optional, Any, List
 from datetime import datetime
 from decimal import Decimal
-from typing import List, Optional, Any
-from pydantic import BaseModel
+
 from app.schemas.enums import VehicleCategoryEnum
 
 
+# Country
+class CountryResponse(BaseModel):
+    country_code: str
+    name: str
+    default_timezone: str
+    default_currency: str
+    phone_code: str
+
+    model_config = {
+        "from_attributes": True
+    }
+
+
+# City + fare config
 class CityResponse(BaseModel):
     city_id: int
     country_code: str
@@ -30,7 +45,7 @@ class FareConfigCreateInput(BaseModel):
     per_min_rate: Decimal
 
     minimum_fare: Optional[Decimal] = None
-    platform_commission_percent: Decimal  
+    platform_commission_percent: Decimal
 
 
 class CityCreateWithFareRequest(BaseModel):
@@ -38,7 +53,7 @@ class CityCreateWithFareRequest(BaseModel):
     timezone: str
     currency: str
 
-    fare_configs: List[FareConfigCreateInput] 
+    fare_configs: List[FareConfigCreateInput]
 
 
 class FareConfigResponse(BaseModel):
@@ -73,3 +88,19 @@ class FareConfigUpdateRequest(BaseModel):
     minimum_fare: Optional[Decimal] = None
     platform_commission_percent: Optional[Decimal] = None
     is_active: Optional[bool] = None
+
+
+# Zones
+class ZoneResponse(BaseModel):
+    zone_id: int
+    city_id: int
+    name: str
+    boundary: Optional[Any] = None
+    created_on: datetime
+
+    class Config:
+        from_attributes = True
+
+
+class ZoneBoundaryUpdateRequest(BaseModel):
+    boundary_geojson: dict

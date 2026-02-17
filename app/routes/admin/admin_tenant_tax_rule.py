@@ -8,7 +8,7 @@ from app.core.admin_auth import verify_admin
 from app.models.tenant.tenant import Tenant
 from app.models.core import Country
 from app.models.tenant.tenant_tax_rule import TenantTaxRule
-from app.schemas.tenant_tax import TenantTaxRuleCreateRequest, TenantTaxRuleResponse
+from app.schemas.admin import TenantTaxRuleCreateRequest, TenantTaxRuleResponse
 
 router = APIRouter(prefix="/admin/tenants", tags=["Admin Tenant Tax Rules"])
 

@@ -13,7 +13,7 @@ from app.models.driver.driver_profile import DriverProfile
 from app.models.common.user import AppUser
 from app.models.driver.driver_vehicle_assignment import DriverVehicleAssignment
 
-from app.schemas.fleet_overview import (
+from app.schemas.fleet import (
     FleetVehicleResponse,
     FleetDriverResponse,
     VehicleDriverAssignmentResponse

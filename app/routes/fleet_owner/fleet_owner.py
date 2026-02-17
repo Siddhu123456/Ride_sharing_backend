@@ -13,13 +13,11 @@ from app.models.tenant.tenant import Tenant, TenantCountry
 from app.models.fleet_owner.fleet import Fleet
 from app.models.fleet_owner.fleet_document import FleetDocument
 
-from app.schemas.admin_tenant import TenantResponse
+from app.schemas.admin import TenantResponse
 from app.schemas.enums import ApprovalStatusEnum, FleetDocumentTypeEnum, TenantRoleEnum
-from app.schemas.fleet_owner_apply import (
-    FleetApplyRequest, FleetApplyResponse
-)
-from app.schemas.fleet_docs import (
-    FleetDocumentUploadRequest, FleetDocumentResponse, FleetDocumentStatusResponse
+from app.schemas.fleet import (
+    FleetApplyRequest, FleetApplyResponse,
+    FleetDocumentUploadRequest, FleetDocumentResponse, FleetDocumentStatusResponse,
 )
 from app.services.fleet.fleet_workflow import (
     get_fleet_uploaded_docs,

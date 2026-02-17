@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 from app.core.admin_auth import verify_admin
 from app.core.database import get_db
 from app.models.tenant.tenant import  Tenant,  TenantCountry
-from app.schemas.admin_tenant import  TenantCountryCreateRequest, TenantCountryResponse, TenantCreateRequest, TenantResponse
+from app.schemas.admin import TenantCountryCreateRequest, TenantCountryResponse, TenantCreateRequest, TenantResponse
 
 
 

@@ -13,9 +13,11 @@ from app.models.tenant.tenant_admin import TenantAdmin
 from app.models.fleet_owner.fleet import Fleet
 from app.models.fleet_owner.fleet_document import FleetDocument
 
-from app.schemas.fleet_admin import FleetPendingResponse
-from app.schemas.fleet_verify import VerifyFleetDocumentRequest
-from app.schemas.fleet_docs import FleetDocumentResponse
+from app.schemas.fleet import (
+    FleetPendingResponse,
+    VerifyFleetDocumentRequest,
+    FleetDocumentResponse,
+)
 
 from app.services.fleet.fleet_workflow import (
     get_fleet_uploaded_docs,

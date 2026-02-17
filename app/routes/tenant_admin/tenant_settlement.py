@@ -17,7 +17,7 @@ from app.schemas.enums import (
     TenantRoleEnum,
     SettlementStatusEnum
 )
-from app.schemas.tenant_settlement import (
+from app.schemas.tenant_admin import (
     FleetResponse,
     TenantFleetPendingCommission,
     TenantSettlementCreateResponse,

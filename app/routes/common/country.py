@@ -4,7 +4,7 @@ from sqlalchemy import select
 
 from app.core.database import get_db
 from app.models.core import Country
-from app.schemas.country import CountryResponse
+from app.schemas.common import CountryResponse
 
 router = APIRouter(prefix="/countries", tags=["Country"])
 

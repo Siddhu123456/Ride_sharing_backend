@@ -13,10 +13,10 @@ from app.models.common.user import AppUser
 from app.models.common.user_session import UserSession
 from app.models.fleet_owner.vehicle import Vehicle
 from app.models.driver.driver_vehicle_assignment import DriverVehicleAssignment
-from app.schemas.driver_vehicle import ChangeVehicleDriverRequest, DriverVehicleAssignmentResponse
+from app.schemas.driver import ChangeVehicleDriverRequest, DriverVehicleAssignmentResponse
 from app.schemas.enums import ApprovalStatusEnum, TenantRoleEnum
 
-from app.schemas.fleet_vehicle_assignment import (
+from app.schemas.fleet import (
     FleetAssignDriverToVehicleRequest,
     FleetAssignDriverToVehicleResponse
 )

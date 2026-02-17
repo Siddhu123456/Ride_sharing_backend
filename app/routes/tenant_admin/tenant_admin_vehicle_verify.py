@@ -13,8 +13,8 @@ from app.models.tenant.tenant_admin import TenantAdmin
 from app.models.fleet_owner.vehicle import Vehicle
 from app.models.fleet_owner.vehicle_document import VehicleDocument
 
-from app.schemas.fleet_verify import VerifyFleetDocumentRequest  # reuse schema {approve: bool}
-from app.schemas.vehicle_docs import VehicleDocumentResponse
+from app.schemas.fleet import VerifyFleetDocumentRequest  # reuse schema {approve: bool}
+from app.schemas.fleet import VehicleDocumentResponse
 from app.services.fleet.vehicle_workflow import (
     get_vehicle_docs,
     compute_vehicle_doc_status,

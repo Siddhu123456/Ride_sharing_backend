@@ -15,7 +15,7 @@ from app.models.fleet_owner.fleet import Fleet
 from app.models.fleet_owner.fleet_driver import FleetDriver
 from app.models.driver.driver_profile import DriverProfile
 
-from app.schemas.driver_dashboard import (
+from app.schemas.driver import (
     DriverDashboardSummaryResponse,
     DriverDashboardTenant,
     DriverDashboardFleet,

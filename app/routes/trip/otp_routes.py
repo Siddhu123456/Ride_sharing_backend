@@ -8,7 +8,7 @@ from app.core.database import get_db
 from app.core.role_guard import require_role
 
 from app.schemas.enums import TenantRoleEnum, TripStatusEnum
-from app.schemas.otp import GenerateOtpResponse, VerifyOtpRequest
+from app.schemas.trip import GenerateOtpResponse, VerifyOtpRequest
 
 from app.models.trip.trip import Trip
 from app.models.trip.trip_otp import TripOtp

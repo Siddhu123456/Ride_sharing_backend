@@ -14,7 +14,7 @@ from app.models.trip.dispatch_attempt import DispatchAttempt
 
 from app.services.trip.distance_service import calculate_distance_km
 
-from app.schemas.driver_offers import DriverOfferResponse, DriverOfferRespondRequest
+from app.schemas.driver import DriverOfferResponse, DriverOfferRespondRequest
 from app.services.trip.dispatch_service import send_next_offer, assign_trip
 
 router = APIRouter(prefix="/driver/offers", tags=["Driver Offers - Phase 2"])

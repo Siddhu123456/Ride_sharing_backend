@@ -8,8 +8,8 @@ from sqlalchemy import select, and_
 from app.core.database import get_db
 from app.core.role_guard import require_role
 from app.models.common.user import AppUser
-from app.schemas.driver_docs import DriverDocumentResponse
-from app.schemas.driver_management import PendingDriverResponse
+from app.schemas.driver import DriverDocumentResponse
+from app.schemas.driver import PendingDriverResponse
 from app.schemas.enums import TenantRoleEnum, ApprovalStatusEnum
 
 from app.models.common.user_session import UserSession
@@ -17,7 +17,7 @@ from app.models.tenant.tenant_admin import TenantAdmin
 from app.models.driver.driver_document import DriverDocument
 from app.models.driver.driver_profile import DriverProfile
 
-from app.schemas.fleet_verify import VerifyFleetDocumentRequest  # reuse {approve: bool}
+from app.schemas.fleet import VerifyFleetDocumentRequest  # reuse {approve: bool}
 
 from app.services.driver.driver_workflow import (
     get_uploaded_driver_docs,

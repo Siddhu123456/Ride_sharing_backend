@@ -4,7 +4,7 @@ from sqlalchemy import select
 
 from app.core.database import get_db
 from app.models.trip.trip import Trip
-from app.schemas.trip_navigation import TripRouteResponse
+from app.schemas.trip import TripRouteResponse
 
 router = APIRouter(prefix="/trips", tags=["Trips - Navigation"])
 

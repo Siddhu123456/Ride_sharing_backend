@@ -1,7 +1,5 @@
 from fastapi import APIRouter
 
-
-
 from .admin_tenant import router as admin_tenant_router
 from .admin_tenant_admin import router as admin_tenant_admin_router
 from .admin_tenant_tax_rule import router as admin_tenant_tax_rule_router

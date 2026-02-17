@@ -7,7 +7,7 @@ from app.core.deps import get_current_user_session
 from app.models.common.user_session import UserSession
 from app.models.common.user import AppUser
 from app.models.driver.driver_profile import DriverProfile
-from app.schemas.driver_profile import DriverProfileResponse
+from app.schemas.driver import DriverProfileResponse
 
 router = APIRouter(prefix="/driver", tags=["Driver - Profile"])
 

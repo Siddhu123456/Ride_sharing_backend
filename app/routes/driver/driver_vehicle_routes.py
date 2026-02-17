@@ -11,7 +11,7 @@ from app.models.common.user_session import UserSession
 from app.models.driver.driver_vehicle_assignment import DriverVehicleAssignment
 from app.models.fleet_owner.vehicle import Vehicle
 
-from app.schemas.driver_vehicle import DriverVehicleAssignmentResponse
+from app.schemas.driver import DriverVehicleAssignmentResponse
 
 router = APIRouter(prefix="/driver", tags=["Driver - Vehicle"])
 

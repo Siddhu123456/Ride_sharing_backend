@@ -12,7 +12,7 @@ from app.models.trip.wallet_transaction import WalletTransaction
 from app.models.common.user_session import UserSession
 
 from app.schemas.enums import TenantRoleEnum, WalletOwnerEnum
-from app.schemas.wallet import (
+from app.schemas.trip import (
     WalletResponse,
     WalletTransactionItem,
     WalletTransactionListResponse

@@ -13,12 +13,10 @@ from app.models.driver.driver_location import DriverLocation
 from app.models.driver.driver_location_history import DriverLocationHistory
 from app.models.driver.driver_vehicle_assignment import DriverVehicleAssignment
 
-from app.schemas.driver_shift import (
+from app.schemas.driver import (
     StartDriverShiftRequest,
     EndDriverShiftRequest,
-    DriverShiftResponse
-)
-from app.schemas.driver_location import (
+    DriverShiftResponse,
     UpdateDriverLocationRequest,
     DriverLocationResponse
 )

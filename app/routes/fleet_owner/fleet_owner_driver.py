@@ -14,8 +14,7 @@ from app.models.common.user_role import UserRole
 from app.models.driver.driver_profile import DriverProfile
 
 from app.schemas.enums import TenantRoleEnum
-from app.schemas.driver_management import AddDriverToFleetByEmailRequest
-from app.schemas.driver_management import FleetDriverResponse  # your response schema
+from app.schemas.driver import AddDriverToFleetByEmailRequest, FleetDriverResponse  # your response schema
 
 
 router = APIRouter(prefix="/fleet-owner", tags=["Fleet Owner - Drivers"])

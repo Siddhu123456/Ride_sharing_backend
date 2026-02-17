@@ -10,7 +10,7 @@ from app.models.trip.trip import Trip
 from app.models.driver.driver_shift import DriverShift
 from app.models.common.user_session import UserSession
 
-from app.schemas.trip_lifecycle import (
+from app.schemas.trip import (
     TripCancelRequest,
     TripCompleteRequest,
     TripStatusResponse

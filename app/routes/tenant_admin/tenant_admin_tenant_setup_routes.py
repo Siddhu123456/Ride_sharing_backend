@@ -13,11 +13,14 @@ from app.models.core import City
 from app.models.tenant.tenant_admin import TenantAdmin
 
 from app.models.common.user import AppUser
-from app.schemas.admin_tenant import (
+from app.schemas.common import (
     CityResponse,
+    CityCreateWithFareRequest,
+    CityWithFareResponse,
+    FareConfigResponse,
+    FareConfigUpdateRequest
 )
-from app.schemas.city import CityCreateWithFareRequest, CityWithFareResponse, FareConfigResponse, FareConfigUpdateRequest
-from app.schemas.tenant_admin_profile import TenantAdminProfileResponse
+from app.schemas.tenant_admin import TenantAdminProfileResponse
 
 router = APIRouter(
     prefix="/tenant-admin",

@@ -9,7 +9,7 @@ from app.core.role_guard import require_role
 from app.models.tenant.tenant import Tenant
 from app.models.common.user_session import UserSession
 from app.models.trip.trip import Trip
-from app.schemas.driver_trip import ActiveTripResponse, DriverTripItem, DriverTripListResponse
+from app.schemas.driver import ActiveTripResponse, DriverTripItem, DriverTripListResponse
 from app.schemas.enums import TenantRoleEnum, TripStatusEnum
 
 router = APIRouter(prefix="/driver/trips", tags=["Driver - Trips"])

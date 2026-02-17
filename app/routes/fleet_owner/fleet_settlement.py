@@ -19,7 +19,7 @@ from app.schemas.enums import (
     WalletTxnReasonEnum,
     SettlementStatusEnum
 )
-from app.schemas.fleet_settlement import (
+from app.schemas.fleet import (
     FleetSettlementHistoryItem,
     FleetSettlementResponse,
     FleetSettlementPayResponse,

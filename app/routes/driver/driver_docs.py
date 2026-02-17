@@ -12,7 +12,7 @@ from app.models.common.user_session import UserSession
 from app.models.driver.driver_profile import DriverProfile
 from app.models.driver.driver_document import DriverDocument
 
-from app.schemas.driver_docs import (
+from app.schemas.driver import (
     DriverDocumentResponse,
     DriverDocumentStatusResponse
 )

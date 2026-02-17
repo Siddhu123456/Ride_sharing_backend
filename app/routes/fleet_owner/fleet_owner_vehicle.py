@@ -12,9 +12,9 @@ from app.models.fleet_owner.vehicle import Vehicle
 from app.models.fleet_owner.vehicle_document import VehicleDocument
 from app.schemas.enums import VehicleDocumentTypeEnum
 
-from app.schemas.vehicle_owner import VehicleCreateRequest, VehicleResponse
-from app.schemas.vehicle_docs import (
-    VehicleDocumentUploadRequest, VehicleDocumentResponse, VehicleDocStatusResponse
+from app.schemas.fleet import (
+    VehicleCreateRequest, VehicleResponse,
+    VehicleDocumentUploadRequest, VehicleDocumentResponse, VehicleDocStatusResponse,
 )
 
 from app.services.fleet.vehicle_workflow import get_vehicle_docs, compute_vehicle_doc_status
