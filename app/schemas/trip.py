@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from app.schemas.enums import (
     VehicleCategoryEnum,
     WalletOwnerEnum,
@@ -179,3 +179,21 @@ class WalletTransactionListResponse(BaseModel):
     model_config = {
         "from_attributes": True
     }
+    
+    
+#Trip Rating
+class TripRatingCreateRequest(BaseModel):
+    rating: int = Field(..., ge=1, le=5)
+    comment: Optional[str] = None
+
+
+class TripRatingResponse(BaseModel):
+    rating_id: int
+    trip_id: int
+    rater_id: int
+    ratee_id: int
+    rating: int
+    comment: Optional[str]
+    created_on: datetime
+
+    model_config = {"from_attributes": True}

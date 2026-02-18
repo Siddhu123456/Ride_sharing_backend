@@ -16,6 +16,9 @@ from app.services.trip.driver_availability_service import (
     count_available_drivers_by_vehicle
 )
 
+import logging
+logger = logging.getLogger(__name__)
+
 
 router = APIRouter(prefix="/trips", tags=["Trips - Fare Discovery"])
 
@@ -43,6 +46,8 @@ def get_fare_estimates(
 
     # 3) Find tenants operating in the city
     tenants = get_tenants_operating_in_city(db, city_id)
+    
+    logger.info(f"available tenants: {tenants}")
 
     estimates = []
 

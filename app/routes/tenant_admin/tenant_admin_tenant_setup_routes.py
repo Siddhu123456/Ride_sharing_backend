@@ -1,7 +1,7 @@
 from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
-from sqlalchemy import select, and_
+from sqlalchemy import func, select, and_
 from starlette import status
 
 from app.core.database import get_db
@@ -209,7 +209,15 @@ def list_tenant_cities(
         raise HTTPException(status_code=403, detail="Not allowed for this tenant")
 
     stmt = (
-        select(City)
+        select(
+            City.city_id,
+            City.country_code,
+            City.name,
+            City.timezone,
+            City.currency,
+            func.ST_AsGeoJSON(City.boundary).label("boundary"),
+            City.created_on
+        )
         .join(TenantCity, TenantCity.city_id == City.city_id)
         .where(TenantCity.tenant_id == tenant_id)
         .where(TenantCity.is_active == True)
@@ -218,8 +226,21 @@ def list_tenant_cities(
     if country_code:
         stmt = stmt.where(City.country_code == country_code)
 
-    cities = db.execute(stmt).scalars().all()
-    return cities
+    rows = db.execute(stmt).all()
+
+    return [
+        {
+            "city_id": r.city_id,
+            "country_code": r.country_code,
+            "name": r.name,
+            "timezone": r.timezone,
+            "currency": r.currency,
+            "boundary": r.boundary,  # GeoJSON string
+            "created_on": r.created_on
+        }
+        for r in rows
+    ]
+
 
 
 @router.get(
