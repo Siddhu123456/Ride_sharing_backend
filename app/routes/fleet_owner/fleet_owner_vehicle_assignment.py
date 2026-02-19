@@ -13,7 +13,7 @@ from app.models.common.user import AppUser
 from app.models.common.user_session import UserSession
 from app.models.fleet_owner.vehicle import Vehicle
 from app.models.driver.driver_vehicle_assignment import DriverVehicleAssignment
-from app.schemas.driver import ChangeVehicleDriverRequest, DriverVehicleAssignmentResponse
+from app.schemas.fleet import ChangeVehicleDriverRequest, DriverVehicleAssignmentResponse
 from app.schemas.enums import ApprovalStatusEnum, TenantRoleEnum
 
 from app.schemas.fleet import (
@@ -319,16 +319,18 @@ def change_driver(
             "Driver not approved or not part of fleet"
         )
 
-    # Deactivate existing assignments
-    existing_assignments = db.execute(
+    # Find current assignment for this vehicle
+    existing_assignment = db.execute(
         select(DriverVehicleAssignment).where(
             DriverVehicleAssignment.vehicle_id == vehicle_id,
             DriverVehicleAssignment.is_active == True
         )
-    ).scalars().all()
+    ).scalar_one_or_none()
 
-    for a in existing_assignments:
-        a.is_active = False
+    # If a driver is currently assigned → remove that row
+    if existing_assignment:
+        db.delete(existing_assignment)
+
 
     # Create new assignment
     new_assignment = DriverVehicleAssignment(

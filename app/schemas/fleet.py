@@ -248,3 +248,31 @@ class VehicleDocStatusResponse(BaseModel):
     all_uploaded: bool
     all_approved: bool
     approved_by_same_admin: bool
+
+
+class DriverVehicleAssignmentResponse(BaseModel):
+    vehicle_id: int
+    driver_id: Optional[int]
+    driver_name: Optional[str]
+
+    start_time: Optional[time]
+    end_time: Optional[time]
+
+    is_active: bool
+    created_on: Optional[datetime]
+
+    model_config = {"from_attributes": True}
+
+
+class ChangeVehicleDriverRequest(BaseModel):
+    driver_id: int
+    start_time: time
+    end_time: time
+    
+    
+class PendingVehicleResponse(BaseModel):
+    vehicle_id: int
+    vehicle_model: Optional[str]
+
+    class Config:
+        from_attributes = True

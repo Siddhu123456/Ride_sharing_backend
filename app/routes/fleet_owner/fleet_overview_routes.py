@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from sqlalchemy import select, and_
+from sqlalchemy import exists
 
 from app.core.database import get_db
 from app.core.role_guard import require_role
@@ -89,6 +90,42 @@ def get_fleet_drivers(
     ]
 
     return drivers
+
+
+
+@router.get(
+    "/fleets/{fleet_id}/vehicles/unassigned",
+    response_model=list[FleetVehicleResponse]
+)
+def get_unassigned_fleet_vehicles(
+    fleet_id: int,
+    db: Session = Depends(get_db),
+    session=Depends(require_role(TenantRoleEnum.FLEET_OWNER))
+):
+    # Validate fleet
+    fleet = db.execute(
+        select(Fleet).where(Fleet.fleet_id == fleet_id)
+    ).scalar_one_or_none()
+
+    if not fleet:
+        raise HTTPException(status_code=404, detail="Fleet not found")
+
+    if fleet.owner_user_id != session.user_id:
+        raise HTTPException(status_code=403, detail="Not allowed")
+
+    # Vehicles that have NO rows in DriverVehicleAssignment
+    vehicles = db.execute(
+        select(Vehicle)
+        .where(
+            Vehicle.fleet_id == fleet_id,
+            ~exists().where(
+                DriverVehicleAssignment.vehicle_id == Vehicle.vehicle_id
+            )
+        )
+    ).scalars().all()
+
+    return vehicles
+
 
 
 # Get vehicle-driver assignments (history and current)

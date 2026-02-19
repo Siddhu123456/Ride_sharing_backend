@@ -162,7 +162,7 @@ def add_city_with_fare_config(
                 FareConfig.city_id == city.city_id,
                 FareConfig.vehicle_category == fc.vehicle_category
             )
-        ).scalar_one_or_none()
+        ).scalars().first()
 
         if existing_fc:
             raise HTTPException(
@@ -367,12 +367,32 @@ def get_available_cities_for_country(
 
     # Fetch cities from master table excluding mapped ones
     available_cities = db.execute(
-        select(City)
+        select(
+            City.city_id,
+            City.country_code,
+            City.name,
+            City.timezone,
+            City.currency,
+            func.ST_AsGeoJSON(City.boundary).label("boundary"),
+            City.created_on
+        )
         .where(
             City.country_code == country_code,
             City.city_id.not_in(mapped_cities_subquery)
         )
         .order_by(City.name)
-    ).scalars().all()
+    ).all()
 
-    return available_cities
+    return [
+        {
+            "city_id": c.city_id,
+            "country_code": c.country_code,
+            "name": c.name,
+            "timezone": c.timezone,
+            "currency": c.currency,
+            "boundary": c.boundary,
+            "created_on": c.created_on
+        }
+        for c in available_cities
+    ]
+
