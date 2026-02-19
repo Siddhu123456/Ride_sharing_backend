@@ -195,12 +195,15 @@ def start_driver_shift(
     ))
 
     # Add driver to Redis GEO
-    redis_client.geoadd(
-        DRIVER_LOCATIONS_KEY,
-        payload.longitude,
-        payload.latitude,
-        payload.driver_id
-    )
+    try:
+        redis_client.geoadd(
+            DRIVER_LOCATIONS_KEY,
+            float(payload.longitude),
+            float(payload.latitude),
+            str(payload.driver_id)
+        )
+    except Exception:
+        pass
 
     db.commit()
     db.refresh(shift)
@@ -284,12 +287,16 @@ def update_driver_location(
     shift.last_longitude = payload.longitude
 
     # Update Redis GEO location
-    redis_client.geoadd(
-        DRIVER_LOCATIONS_KEY,
-        payload.longitude,
-        payload.latitude,
-        payload.driver_id
-    )
+    try:
+        redis_client.geoadd(
+            DRIVER_LOCATIONS_KEY,
+            float(payload.longitude),
+            float(payload.latitude),
+            str(payload.driver_id)
+        )
+    except Exception:
+        pass
+
 
     db.commit()
     db.refresh(loc)
@@ -331,7 +338,7 @@ def end_driver_shift(
     shift.ended_at = now
 
     # Remove driver from Redis GEO
-    redis_client.zrem(DRIVER_LOCATIONS_KEY, payload.driver_id)
+    redis_client.zrem(DRIVER_LOCATIONS_KEY, str(payload.driver_id))
 
     db.commit()
     return {"message": "Shift ended successfully"}

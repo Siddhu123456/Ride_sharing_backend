@@ -11,7 +11,8 @@ from app.models.common.user_session import UserSession
 
 from app.schemas.trip import TripRequestCreate, TripResponse
 from app.services.trip.tenant_city_service import tenant_operates_in_city
-from app.services.trip.dispatch_service import create_first_offer
+from app.services.trip.dispatch_service import dispatch_trip
+
 
 router = APIRouter(prefix="/trips", tags=["Trips"])
 
@@ -22,6 +23,7 @@ def request_trip(
     db: Session = Depends(get_db),
     session: UserSession = Depends(require_role(TenantRoleEnum.RIDER))
 ):
+
     if not tenant_operates_in_city(db, payload.tenant_id, payload.city_id):
         raise HTTPException(403, "Tenant not operating in this city")
 
@@ -48,10 +50,7 @@ def request_trip(
     db.commit()
     db.refresh(trip)
 
-    create_first_offer(db, trip, session.user_id)
-    db.commit()
+    # START DISPATCH
+    dispatch_trip(db, trip, session.user_id)
 
     return trip
-
-
-

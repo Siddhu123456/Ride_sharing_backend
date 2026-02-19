@@ -5,6 +5,7 @@ from sqlalchemy import select
 
 from app.core.database import get_db
 from app.core.role_guard import require_role
+from app.models.trip.dispatch_attempt import DispatchAttempt
 from app.schemas.enums import TenantRoleEnum, TripStatusEnum
 from app.models.trip.trip import Trip
 from app.models.driver.driver_shift import DriverShift
@@ -66,10 +67,31 @@ def cancel_trip_route(
     ]:
         raise HTTPException(400, "Cannot cancel now")
 
-    cancel_trip(db, trip, session.user_id)
+    now = datetime.now(timezone.utc)
+
+
+    # CANCEL TRIP
+    trip.status = TripStatusEnum.CANCELLED
+    trip.cancelled_at = now
+    trip.updated_by = session.user_id
+    trip.updated_on = now
+
+    # VOID DISPATCH ATTEMPTS
+    db.query(DispatchAttempt).filter(
+        DispatchAttempt.trip_id == trip.trip_id,
+        DispatchAttempt.response.is_(None)  # pending only
+    ).update(
+        {
+            "response": "CANCELLED_BY_RIDER",
+            "responded_at": now
+        },
+        synchronize_session=False
+    )
+
     db.commit()
 
     return {"message": "Trip cancelled"}
+
 
 
 @router.post("/{trip_id}/complete")

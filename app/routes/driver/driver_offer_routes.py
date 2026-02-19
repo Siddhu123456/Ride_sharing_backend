@@ -86,7 +86,6 @@ def pending_offers(
 
 
 
-# Driver accepts / rejects offer
 @router.post("/{attempt_id}/respond", status_code=status.HTTP_200_OK)
 def respond_offer(
     attempt_id: int,
@@ -94,6 +93,7 @@ def respond_offer(
     db: Session = Depends(get_db),
     session: UserSession = Depends(require_role(TenantRoleEnum.DRIVER))
 ):
+
     attempt = db.execute(
         select(DispatchAttempt).where(DispatchAttempt.attempt_id == attempt_id)
     ).scalar_one_or_none()
@@ -104,6 +104,10 @@ def respond_offer(
     if attempt.driver_id != session.user_id:
         raise HTTPException(status_code=403, detail="Not your offer")
 
+    # Already responded?
+    if attempt.response is not None:
+        raise HTTPException(status_code=400, detail="Offer already responded")
+
     trip = db.execute(
         select(Trip).where(Trip.trip_id == attempt.trip_id)
     ).scalar_one_or_none()
@@ -111,31 +115,48 @@ def respond_offer(
     if not trip:
         raise HTTPException(status_code=404, detail="Trip not found")
 
-    if trip.status != TripStatusEnum.REQUESTED:
-        raise HTTPException(status_code=400, detail="Trip not available anymore")
-
     now = datetime.now(timezone.utc)
 
     attempt.responded_at = now
     attempt.updated_by = session.user_id
     attempt.updated_on = now
-
-    # Accept flow
+    
+    # ACCEPT FLOW
     if payload.accept:
+
+        # Someone else already accepted?
+        if trip.driver_id is not None:
+            attempt.response = "FAILED_ALREADY_ASSIGNED"
+            db.commit()
+            raise HTTPException(
+                status_code=409,
+                detail="Trip already assigned to another driver"
+            )
+
         attempt.response = "ACCEPTED"
 
         try:
             assign_trip(
                 db,
-                trip,
+                trip_id=trip.trip_id,
                 driver_id=session.user_id,
                 updated_by=session.user_id
             )
         except ValueError as e:
             raise HTTPException(status_code=400, detail=str(e))
 
+        # Cancel ALL other pending attempts
+        db.query(DispatchAttempt).filter(
+            DispatchAttempt.trip_id == trip.trip_id,
+            DispatchAttempt.attempt_id != attempt_id,
+            DispatchAttempt.response.is_(None)
+        ).update(
+            {"response": "CANCELLED", "responded_at": now},
+            synchronize_session=False
+        )
+
         db.commit()
-        db.refresh(trip)  # Important: refresh trip after assignment
+        db.refresh(trip)
 
         return {
             "trip": {
@@ -154,15 +175,24 @@ def respond_offer(
             }
         }
 
-    # Reject flow
+    # REJECT FLOW
     attempt.response = "REJECTED"
 
-    next_offer = send_next_offer(db, trip, created_by=session.user_id)
+    # Are there still pending offers?
+    pending_exists = db.query(DispatchAttempt).filter(
+        DispatchAttempt.trip_id == trip.trip_id,
+        DispatchAttempt.response.is_(None)
+    ).count() > 0
+
+    next_offer = None
+
+    if not pending_exists:
+        # No pending → advance dispatch
+        next_offer = send_next_offer(db, trip, created_by=session.user_id)
+
     db.commit()
 
     if next_offer:
         return {"message": "Offer rejected. Next driver notified."}
 
-    return {"message": "Offer rejected. No other drivers available."}
-
-
+    return {"message": "Offer rejected."}
