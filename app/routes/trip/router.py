@@ -6,6 +6,7 @@ from .trip_lifecycle_routes import router as trip_lifecycle_router
 from .trip_navigation_routes import router as trip_navigation_router
 from .otp_routes import router as otp_router
 from .wallet_routes import router as wallet_router
+from app.routes.trip.trip_rating_routes import router as trip_rating_router
 
 router = APIRouter()
 
@@ -15,5 +16,6 @@ router.include_router(trip_lifecycle_router)
 router.include_router(trip_navigation_router)
 router.include_router(otp_router)
 router.include_router(wallet_router)
+router.include_router(trip_rating_router)
 
 __all__ = ["router"]
