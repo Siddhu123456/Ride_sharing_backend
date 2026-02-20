@@ -5,7 +5,7 @@ from sqlalchemy import exists
 
 from app.core.database import get_db
 from app.core.role_guard import require_role
-from app.schemas.enums import TenantRoleEnum
+from app.schemas.enums import ApprovalStatusEnum, TenantRoleEnum
 
 from app.models.fleet_owner.fleet import Fleet
 from app.models.fleet_owner.vehicle import Vehicle
@@ -118,6 +118,7 @@ def get_unassigned_fleet_vehicles(
         select(Vehicle)
         .where(
             Vehicle.fleet_id == fleet_id,
+            Vehicle.approval_status == ApprovalStatusEnum.APPROVED,  # added
             ~exists().where(
                 DriverVehicleAssignment.vehicle_id == Vehicle.vehicle_id
             )

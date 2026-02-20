@@ -5,7 +5,7 @@ from sqlalchemy import select
 from app.core.database import get_db
 from app.core.role_guard import require_role
 
-from app.models.trip import Trip
+from app.models.trip.trip import Trip
 from app.models.trip.trip_rating import TripRating
 from app.models.common.user_session import UserSession
 

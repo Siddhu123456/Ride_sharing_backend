@@ -159,6 +159,7 @@ def add_city_with_fare_config(
     for fc in payload.fare_configs:
         existing_fc = db.execute(
             select(FareConfig).where(
+                FareConfig.tenant_id == tenant_id,
                 FareConfig.city_id == city.city_id,
                 FareConfig.vehicle_category == fc.vehicle_category
             )
