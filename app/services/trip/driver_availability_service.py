@@ -1,5 +1,7 @@
 from sqlalchemy.orm import Session
-from sqlalchemy import select, and_, func
+from sqlalchemy import select, func
+from sqlalchemy import text
+
 
 from app.models.core import City
 from app.models.driver.driver_shift import DriverShift
@@ -22,65 +24,130 @@ def count_available_drivers_by_vehicle(
     pickup_lat: float,
     pickup_lng: float
 ) -> dict[VehicleCategoryEnum, int]:
-    """
-    Returns:
-    {
-        VehicleCategoryEnum.AUTO: 12,
-        VehicleCategoryEnum.SEDAN: 0,
-        VehicleCategoryEnum.SUV: 3
-    }
-    """
 
-    stmt = (
-        select(
-            Vehicle.category,
-            func.count(func.distinct(DriverShift.driver_id))
-        )
-        .join(DriverVehicleAssignment,
-              DriverVehicleAssignment.vehicle_id == Vehicle.vehicle_id)
-        .join(DriverShift,
-              DriverShift.driver_id == DriverVehicleAssignment.driver_id)
-        .join(DriverProfile,
-              DriverProfile.driver_id == DriverShift.driver_id)
-        .join(City, City.city_id == city_id)
-        .where(
-            # Tenant + shift
-            DriverShift.tenant_id == tenant_id,
-            DriverShift.status == "ONLINE",
-            DriverShift.ended_at.is_(None),
+    query = text("""
+        SELECT
+            v.category AS vehicle_category,
+            COUNT(DISTINCT ds.driver_id) AS driver_count
+        FROM driver_shift ds
+        JOIN driver_vehicle_assignment dva
+            ON dva.driver_id = ds.driver_id
+        JOIN vehicle v
+            ON v.vehicle_id = dva.vehicle_id
+        JOIN driver_profile dp
+            ON dp.driver_id = ds.driver_id
+        JOIN city c
+            ON c.city_id = :city_id
+        WHERE
+            ds.tenant_id = :tenant_id
+            AND ds.status = 'ONLINE'
+            AND ds.ended_at IS NULL
+            AND dva.is_active = TRUE
+            AND dp.approval_status = 'APPROVED'
+            AND v.approval_status = 'APPROVED'
+            AND v.status = 'ACTIVE'
 
-            # Active assignment
-            DriverVehicleAssignment.is_active.is_(True),
-
-            # Driver approved
-            DriverProfile.approval_status == ApprovalStatusEnum.APPROVED,
-
-            # Vehicle valid
-            Vehicle.approval_status == ApprovalStatusEnum.APPROVED,
-            Vehicle.status == VehicleStatusEnum.ACTIVE,
-
-            # Driver inside city
-            func.ST_Contains(
-                City.boundary,
-                func.ST_SetSRID(
-                    func.ST_Point(
-                        DriverShift.last_longitude,
-                        DriverShift.last_latitude
-                    ),
+            -- Driver inside city boundary
+            AND ST_Contains(
+                c.boundary,
+                ST_SetSRID(
+                    ST_Point(ds.last_longitude, ds.last_latitude),
                     4326
                 )
             )
-        )
-        .group_by(Vehicle.category)
-    )
 
-    rows = db.execute(stmt).all()
+            AND ST_DWithin(
+                ST_SetSRID(
+                    ST_Point(ds.last_longitude, ds.last_latitude),
+                    4326
+                )::geography,
+                ST_SetSRID(
+                    ST_Point(:pickup_lng, :pickup_lat),
+                    4326
+                )::geography,
+                10000
+            )
 
-    # Convert to dict
+        GROUP BY v.category
+    """)
+
+    rows = db.execute(
+        query,
+        {
+            "city_id": city_id,
+            "tenant_id": tenant_id,
+            "pickup_lat": pickup_lat,
+            "pickup_lng": pickup_lng
+        }
+    ).all()
+
     availability = {row[0]: row[1] for row in rows}
 
-    # Ensure all vehicle categories are present (0 if missing)
+    # Ensure all categories exist
     for category in VehicleCategoryEnum:
         availability.setdefault(category, 0)
 
     return availability
+
+
+def get_online_drivers_within_10km(
+    db: Session,
+    *,
+    city_id: int,
+    pickup_lat: float,
+    pickup_lng: float
+):
+    query = text("""
+        SELECT
+            ds.driver_id,
+            ds.tenant_id,
+            ds.last_latitude,
+            ds.last_longitude,
+            v.category AS vehicle_category
+        FROM driver_shift ds
+        JOIN driver_vehicle_assignment dva
+            ON dva.driver_id = ds.driver_id
+        JOIN vehicle v
+            ON v.vehicle_id = dva.vehicle_id
+        JOIN driver_profile dp
+            ON dp.driver_id = ds.driver_id
+        JOIN city c
+            ON c.city_id = :city_id
+        WHERE
+            ds.status = 'ONLINE'
+            AND ds.ended_at IS NULL
+            AND dva.is_active = TRUE
+            AND dp.approval_status = 'APPROVED'
+            AND v.approval_status = 'APPROVED'
+            AND v.status = 'ACTIVE'
+
+            -- Driver inside city boundary
+            AND ST_Contains(
+                c.boundary,
+                ST_SetSRID(
+                    ST_Point(ds.last_longitude, ds.last_latitude),
+                    4326
+                )
+            )
+
+            AND ST_DWithin(
+                ST_SetSRID(
+                    ST_Point(ds.last_longitude, ds.last_latitude),
+                    4326
+                )::geography,
+                ST_SetSRID(
+                    ST_Point(:pickup_lng, :pickup_lat),
+                    4326
+                )::geography,
+                10000
+            )
+    """)
+
+    return db.execute(
+        query,
+        {
+            "city_id": city_id,
+            "pickup_lat": pickup_lat,
+            "pickup_lng": pickup_lng
+        }
+    ).all()

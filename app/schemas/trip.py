@@ -204,3 +204,21 @@ class CityCheckRequest(BaseModel):
     pickup_lng: float
     drop_lat: float
     drop_lng: float
+    
+    
+class NearbyDriverResponse(BaseModel):
+    driver_id: int
+    tenant_id: int
+    latitude: float
+    longitude: float
+    vehicle_category: VehicleCategoryEnum
+    
+    
+class NearbyDriversListResponse(BaseModel):
+    drivers: list[NearbyDriverResponse]
+    
+    
+class NearbyDriversRequest(BaseModel):
+    city_id: int
+    pickup_lat: float
+    pickup_lng: float
