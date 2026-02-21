@@ -197,3 +197,10 @@ class TripRatingResponse(BaseModel):
     created_on: datetime
 
     model_config = {"from_attributes": True}
+
+
+class CityCheckRequest(BaseModel):
+    pickup_lat: float
+    pickup_lng: float
+    drop_lat: float
+    drop_lng: float

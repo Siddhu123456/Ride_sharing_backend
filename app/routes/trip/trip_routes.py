@@ -9,7 +9,8 @@ from app.schemas.enums import TenantRoleEnum
 from app.models.trip.trip import Trip
 from app.models.common.user_session import UserSession
 
-from app.schemas.trip import TripRequestCreate, TripResponse
+from app.schemas.trip import CityCheckRequest, TripRequestCreate, TripResponse
+from app.services.trip.location_service import detect_city_by_location
 from app.services.trip.tenant_city_service import tenant_operates_in_city
 from app.services.trip.dispatch_service import dispatch_trip
 
@@ -54,3 +55,27 @@ def request_trip(
     dispatch_trip(db, trip, session.user_id)
 
     return trip
+
+
+@router.post("/same-city", response_model=bool)
+def check_same_city(
+    payload: CityCheckRequest,
+    db: Session = Depends(get_db)
+):
+    pickup_city = detect_city_by_location(
+        db,
+        payload.pickup_lat,
+        payload.pickup_lng
+    )
+
+    drop_city = detect_city_by_location(
+        db,
+        payload.drop_lat,
+        payload.drop_lng
+    )
+
+    # If either location not inside any city → treat as False
+    if pickup_city is None or drop_city is None:
+        return False
+
+    return pickup_city == drop_city

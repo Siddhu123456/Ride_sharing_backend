@@ -5,8 +5,6 @@ from starlette import status
 from datetime import datetime, time, timezone, timedelta
 
 from app.core.database import get_db
-from app.core.redis import redis_client, DRIVER_LOCATIONS_KEY
-
 
 from app.models.trip.trip import Trip
 from app.models.common.user import AppUser
@@ -194,17 +192,6 @@ def start_driver_shift(
         recorded_at=now
     ))
 
-    # Add driver to Redis GEO
-    try:
-        redis_client.geoadd(
-            DRIVER_LOCATIONS_KEY,
-            float(payload.longitude),
-            float(payload.latitude),
-            str(payload.driver_id)
-        )
-    except Exception:
-        pass
-
     db.commit()
     db.refresh(shift)
     return shift
@@ -286,17 +273,6 @@ def update_driver_location(
     shift.last_latitude = payload.latitude
     shift.last_longitude = payload.longitude
 
-    # Update Redis GEO location
-    try:
-        redis_client.geoadd(
-            DRIVER_LOCATIONS_KEY,
-            float(payload.longitude),
-            float(payload.latitude),
-            str(payload.driver_id)
-        )
-    except Exception:
-        pass
-
 
     db.commit()
     db.refresh(loc)
@@ -336,9 +312,6 @@ def end_driver_shift(
 
     shift.status = DriverShiftStatusEnum.OFFLINE
     shift.ended_at = now
-
-    # Remove driver from Redis GEO
-    redis_client.zrem(DRIVER_LOCATIONS_KEY, str(payload.driver_id))
 
     db.commit()
     return {"message": "Shift ended successfully"}
