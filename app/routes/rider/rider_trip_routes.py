@@ -22,9 +22,7 @@ def get_active_trip_for_rider(
     active_statuses = [
         TripStatusEnum.REQUESTED,
         TripStatusEnum.ASSIGNED,
-        TripStatusEnum.ARRIVED,
-        TripStatusEnum.PICKED_UP,
-        TripStatusEnum.IN_PROGRESS
+        TripStatusEnum.PICKED_UP
     ]
 
     trip = db.execute(

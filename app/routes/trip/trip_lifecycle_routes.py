@@ -69,6 +69,20 @@ def cancel_trip_route(
 
     now = datetime.now(timezone.utc)
 
+    # If trip was ASSIGNED → set driver OFFLINE
+    if trip.status == TripStatusEnum.ASSIGNED and trip.driver_id:
+
+        driver_shift = db.execute(
+            select(DriverShift)
+            .where(
+                DriverShift.driver_id == trip.driver_id,
+                DriverShift.status == "ON_TRIP",
+                DriverShift.ended_at.is_(None)
+            )
+        ).scalar_one_or_none()
+
+        if driver_shift:
+            driver_shift.status = "ONLINE"
 
     # CANCEL TRIP
     trip.status = TripStatusEnum.CANCELLED
@@ -79,7 +93,7 @@ def cancel_trip_route(
     # VOID DISPATCH ATTEMPTS
     db.query(DispatchAttempt).filter(
         DispatchAttempt.trip_id == trip.trip_id,
-        DispatchAttempt.response.is_(None)  # pending only
+        DispatchAttempt.response.is_(None)
     ).update(
         {
             "response": "CANCELLED_BY_RIDER",
