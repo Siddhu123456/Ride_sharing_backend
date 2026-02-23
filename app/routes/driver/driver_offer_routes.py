@@ -109,7 +109,9 @@ def respond_offer(
         raise HTTPException(status_code=400, detail="Offer already responded")
 
     trip = db.execute(
-        select(Trip).where(Trip.trip_id == attempt.trip_id)
+        select(Trip)
+        .where(Trip.trip_id == attempt.trip_id)
+        .with_for_update()
     ).scalar_one_or_none()
 
     if not trip:
