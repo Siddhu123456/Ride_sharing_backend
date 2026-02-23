@@ -16,9 +16,7 @@ from app.schemas.enums import (
     TripStatusEnum
 )
 
-# ==============================
 # CONFIG
-# ==============================
 
 BATCH_SIZE = 3
 INITIAL_RADIUS_KM = 2
@@ -26,9 +24,8 @@ RADIUS_INCREMENT_KM = 2
 MAX_RADIUS_KM = 10
 
 
-# ==============================
+
 # HAVERSINE DISTANCE
-# ==============================
 
 def haversine_km(lat1, lng1, lat2, lng2):
     R = 6371.0
@@ -47,9 +44,7 @@ def haversine_km(lat1, lng1, lat2, lng2):
     return R * c
 
 
-# ==============================
 # FIND ELIGIBLE DRIVERS
-# ==============================
 
 def find_eligible_drivers(db: Session, trip: Trip, radius_km: float):
 
@@ -99,9 +94,7 @@ def find_eligible_drivers(db: Session, trip: Trip, radius_km: float):
     return [d[0] for d in eligible]
 
 
-# ==============================
 # DISPATCH TRIP — EXPANDING SEARCH
-# ==============================
 
 def dispatch_trip(db: Session, trip: Trip, created_by: int) -> bool:
 
@@ -126,16 +119,14 @@ def dispatch_trip(db: Session, trip: Trip, created_by: int) -> bool:
             print(f"✅ Dispatch created with radius {radius} km")
             return True
 
-        print(f"❌ No drivers within {radius} km — expanding radius")
+        print(f" No drivers within {radius} km — expanding radius")
         radius += RADIUS_INCREMENT_KM
 
-    print("❌ No drivers found within max radius")
+    print(" No drivers found within max radius")
     return False
 
 
-# ==============================
 # NEXT WAVE
-# ==============================
 
 def send_next_offer(db: Session, trip: Trip, created_by: int):
 
@@ -180,13 +171,11 @@ def send_next_offer(db: Session, trip: Trip, created_by: int):
 
     trip.status = TripStatusEnum.CANCELLED
     db.commit()
-    print("❌ Trip cancelled — no drivers available")
+    print("Trip cancelled — no drivers available")
     return None
 
 
-# ==============================
 # ASSIGN DRIVER
-# ==============================
 
 def assign_trip(db: Session, trip_id: int, driver_id: int, updated_by: int):
 
